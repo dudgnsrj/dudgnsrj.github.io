@@ -9,7 +9,7 @@ sidebar:
     # Profile information
     name: Younghun Cho
     tagline: Vehicle Localization Engineer
-    avatar: profile.jpg  #place a 100x100 picture inside /assets/images/ folder and provide the name of the file below
+    avatar: profile.png  #place a 100x100 picture inside /assets/images/ folder and provide the name of the file below
 
     # Sidebar links
     email: lucascho@kaist.ac.kr
@@ -44,6 +44,7 @@ career-profile:
       penatibus et magnis dis parturient montes, nascetur ridiculus mus.
       Donec quam felis, ultricies nec, pellentesque eu.
       Second paragraph if required.
+      
 education:
     - degree: Ph.D. in Civil and Environmental Engineering
       university: KAIST
@@ -94,26 +95,14 @@ experiences:
         architecto beatae vitae dicta sunt explicabo.
           - Bullet point
           - Bullet point
-projects:
-    title: Projects
-    intro: >
-      You can list your side projects or open source libraries in this
-      section. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-      Vestibulum et ligula in nunc bibendum fringilla a eu lectus.
-    assignments:
-      - title: Velocity
-        link: "#hook"
-        tagline: "A responsive website template designed to help startups promote, market and sell their products."
 
 publications:
     title: Publications
     intro: |
-      You can list your publications in this section. Lorem ipsum dolor sit
-      amet, consectetur adipiscing elit. Vestibulum et ligula in nunc
-      bibendum fringilla a eu lectus.
+      The following are the papers I have participated in. They are sorted in time order.
     papers:
       - title: OpenStreetMap-based LiDAR Global Localization in Urban Environment without a Prior LiDAR Map
-        link: "#"
+        link: https://ieeexplore.ieee.org/abstract/document/9716862
         authors: Younghun Cho, Giseop Kim, Sang-min Lee, and Jee-Hwan Ryu
         conference:  IEEE Robotics and Automation Letters, 2022 (with ICRA 2022)
         
@@ -123,6 +112,12 @@ skills:
     toolset:
       - name: ROS
         level: 90%
-
+      - name: C++
+        level: 50%
+      - name: Python & PyTorch
+        level: 50%
+      - name: MATLAB
+        level: 95%
+        
 footer: >
     Designed with <i class="fas fa-heart"></i> by <a href="http://themes.3rdwavemedia.com" target="_blank" rel="nofollow">Xiaoying Riley</a>
