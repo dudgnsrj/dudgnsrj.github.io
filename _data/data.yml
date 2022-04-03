@@ -36,14 +36,11 @@ sidebar:
         level: Professional
 
 career-profile:
-    title: Career Profile
+    title: Profile
     summary: |
-      Summarise your career here lorem ipsum dolor sit amet, consectetuer
-      adipiscing elit. You can [download this free resume/CV template here]().
-      Aenean commodo ligula eget dolor aenean massa. Cum sociis natoque
-      penatibus et magnis dis parturient montes, nascetur ridiculus mus.
-      Donec quam felis, ultricies nec, pellentesque eu.
-      Second paragraph if required.
+      I am a Ph.D. candidate in IRiS Lab., KAIST advised by Prof. Jee-Hwan Ryu. I obtained an M.S.(2020) at IRAP Lab., KAIST (currently RPM Robotics Lab in SNU) advised by Prof. Ayoung Kim.
+      My research topic focuses on the localization of autonomous vehicles without the usage of HD maps.
+      
       
 education:
     - degree: Ph.D. in Civil and Environmental Engineering
@@ -84,17 +81,7 @@ experiences:
       time: 2020 - 2021
       company: NAVER LABS
       details: |
-        Describe your role here lorem ipsum dolor sit amet, consectetuer
-        adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa.
-        Cum sociis natoque penatibus et magnis dis parturient montes,
-        nascetur ridiculus mus. Donec quam felis, ultricies nec,
-        pellentesque eu, pretium quis, sem. Nulla consequat massa quis
-        enim. Donec pede justo. Sed ut perspiciatis unde omnis iste natus
-        error sit voluptatem accusantium doloremque laudantium, totam rem
-        aperiam, eaque ipsa quae ab illo inventore veritatis et quasi
-        architecto beatae vitae dicta sunt explicabo.
-          - Bullet point
-          - Bullet point
+        I participated in coverage path planning research for LiDAR data acquisition.
 
 publications:
     title: Publications
@@ -105,6 +92,16 @@ publications:
         link: https://ieeexplore.ieee.org/abstract/document/9716862
         authors: Younghun Cho, Giseop Kim, Sang-min Lee, and Jee-Hwan Ryu
         conference:  IEEE Robotics and Automation Letters, 2022 (with ICRA 2022)
+        
+      - title: RL-based Path Planning for SLAM Uncertainty Minimization in Urban Mapping
+        link: https://www.koreascience.or.kr/article/JAKO202117242224848.page
+        authors: Younghun Cho and Ayoung Kim
+        conference:  The Journal of Korea Robotics Society, 2021
+        
+      - title: Mulran: Multimodal range dataset for urban place recognition
+        link: https://ieeexplore.ieee.org/abstract/document/9197298
+        authors: Giseop Kim, Yeong Sang Park, Younghun Cho, Jinyong Jeong, and Ayoung Kim
+        conference:  IEEE International Conference on Robotics and Automation (ICRA), 2020
         
 skills:
     title: Skills &amp; Proficiency
