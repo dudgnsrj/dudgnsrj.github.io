@@ -3,7 +3,7 @@
 #
 
 sidebar:
-    about: True # set to False or comment line if you want to remove the "how to use?" in the sidebar
+    about: False # set to False or comment line if you want to remove the "how to use?" in the sidebar
     education: True # set to False if you want education in main section instead of in sidebar
 
     # Profile information
@@ -13,8 +13,8 @@ sidebar:
 
     # Sidebar links
     email: lucascho@kaist.ac.kr
-    phone: 042 350 3678
-    citizenship: Korea
+    phone: 
+    citizenship: 
     website: #do not add http://
     linkedin: 
     xing: 
@@ -45,9 +45,9 @@ career-profile:
       Donec quam felis, ultricies nec, pellentesque eu.
       Second paragraph if required.
 education:
-    - degree: Ph.D in Civil and Environmental Engineering
+    - degree: Ph.D. in Civil and Environmental Engineering
       university: KAIST
-      time: 2020 - 
+      time: 2020 - Current
       details: |
         Describe your study here lorem ipsum dolor sit amet, consectetuer
         adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum
@@ -56,7 +56,7 @@ education:
         pretium quis, sem.
           - Bullet point
           - Bullet point
-    - degree: MS in Civil and Environmental Engineering
+    - degree: M.S. in Civil and Environmental Engineering
       university: KAIST
       time: 2018 - 2020
       details: |
@@ -67,7 +67,7 @@ education:
         pretium quis, sem.
           - Bullet point
           - Bullet point
-    - degree: BS in Civil and Environmental Engineering
+    - degree: B.S. in Civil and Environmental Engineering
       university: KAIST
       time: 2014 - 2018
       details: |
