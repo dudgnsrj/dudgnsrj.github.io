@@ -41,7 +41,6 @@ career-profile:
       I am a Ph.D. candidate in IRiS Lab., KAIST advised by Prof. Jee-Hwan Ryu. I obtained an M.S.(2020) at IRAP Lab., KAIST (currently RPM Robotics Lab in SNU) advised by Prof. Ayoung Kim.
       My research topic focuses on the localization of autonomous vehicles without the usage of HD maps.
       
-      
 education:
     - degree: Ph.D. in Civil and Environmental Engineering
       university: KAIST
@@ -76,6 +75,7 @@ education:
         pretium quis, sem.
           - Bullet point
           - Bullet point
+          
 experiences:
     - role: Research Intern
       time: 2020 - 2021
