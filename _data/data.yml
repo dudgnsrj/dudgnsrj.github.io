@@ -103,6 +103,11 @@ publications:
         authors: Giseop Kim, Yeong Sang Park, Younghun Cho, Jinyong Jeong, and Ayoung Kim
         conference:  IEEE International Conference on Robotics and Automation (ICRA), 2020
         
+      - title: Path Pre-planning Optimizing SLAM Uncertainty using Reinforcement Learning
+        link: https://koasas.kaist.ac.kr/handle/10203/283947
+        authors: Advised by Prof. Ayoung Kim
+        conference:  M.S. Thesis (Civil and Environmental Engineering, KAIST), 2020
+        
       - title: The road is enough! Extrinsic calibration of non-overlapping stereo camera and LiDAR using road information
         link: https://ieeexplore.ieee.org/abstract/document/8736758
         authors: Jinyong Jeong, Younghun Cho, and Ayoung Kim
