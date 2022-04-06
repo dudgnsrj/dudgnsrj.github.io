@@ -1,36 +1,27 @@
 {% assign services = site.data.data.services %}
 {% if services %}
-<section class="section services-section">
+<section class="services-section section">
+
   <h2 class="section-title">
     <span class="fa-stack fa-xs">
       <i class="fas fa-circle fa-stack-2x"></i>
-      <i class="fas fa-briefcase fa-stack-1x fa-inverse"></i>
+      <i class="fas fa-wrench fa-stack-1x fa-inverse"></i>
     </span>
-    Services
+    {{ services.title }}
   </h2>
 
-  {% for service in services %}
-  <div class="item">
+  <div class="services">
 
-    <div class="meta">
+    {% for service in services.type %}
+    <div class="item">
 
-      <div class="upper-row">
-        <h3 class="job-title">{{ service.role }}</h3>
-      </div><!--//upper-row-->
+      <h3 class="role">{{ service.role }}</h3>
+      <div class="time">{{ service.time }}<\div>
 
-      <div class="time">{{ service.time }}</div>
+    </div><!--//item-->
+    {% endfor %}
 
-    </div><!--//meta-->
+  </div>
 
-    {% if service.details %}
-    <div class="details">
-      {{ service.details | markdownify }}
-    </div><!--//details-->
-    {% endif %}
-
-  </div><!--//item-->
-  {% endfor %}
-
-</section><!--//section-->
+</section><!--//services-section-->
 {% endif %}
-
