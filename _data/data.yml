@@ -114,21 +114,18 @@ publications:
         conference:  IEEE Robotics and Automation Letters, 2019
         
 services:
-    - type: Reviewer
-        - role: IEEE Robotics and Automation Letters (2022)
-
-        - role: IEEE International Conference on Intelligent Robots and Systems (IROS, 2022)
-
-        - role: IEEE International Conference on Ubiquitous Robots (UR, 2022)
-
-        - role: Reviewer of IEEE International Conference on Robotics and Automation (ICRA, 2021)
+    title: Services
+    
+    type:
+      - role: IEEE Robotics and Automation Letters (2022)
+      - role: IEEE International Conference on Intelligent Robots and Systems (IROS, 2022)
+      - role: IEEE International Conference on Ubiquitous Robots (UR, 2022)
+      - role: Reviewer of IEEE International Conference on Robotics and Automation (ICRA, 2021)
           
-    - type: Teaching Assistant
-        - role: CE352 (Signal and System for Construction IT), CEE, KAIST (2017, 2019, 2021)
-
-        - role: Teaching Assistant of CE481 (Sensor-based Spatial Intelligence), CEE, KAIST (2020)
-
-        - role: Teaching Assistant of CE554 (Mechanical Design of Civil Robot), CEE, KAIST (2018)
+    type: 
+      - role: CE352 (Signal and System for Construction IT), CEE, KAIST (2017, 2019, 2021
+      - role: Teaching Assistant of CE481 (Sensor-based Spatial Intelligence), CEE, KAIST (2020)
+      - role: Teaching Assistant of CE554 (Mechanical Design of Civil Robot), CEE, KAIST (2018)
       
 skills:
     title: Skills &amp; Proficiency
