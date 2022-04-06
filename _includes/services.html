@@ -10,15 +10,8 @@
   </h2>
 
   {% for service in services %}
-  <div class="item">
-    <li>{{ service.role }}</li>
-    <div class="time">{{ service.time }}</div>
-    {% if service.details %}
-    <div class="details">
-      {{ service.details | markdownify }}
-    </div><!--//details-->
-    {% endif %}
-  </div><!--//item-->
+  <li>{{ service.role }}</li>
+  <div class="time">{{ service.time }}</div>
   {% endfor %}
 
 </section><!--//section-->
