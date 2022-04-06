@@ -113,6 +113,22 @@ publications:
         authors: Jinyong Jeong, Younghun Cho, and Ayoung Kim
         conference:  IEEE Robotics and Automation Letters, 2019
         
+services:
+    - role: Reviewer of IEEE Robotics and Automation Letters
+      time: 2022
+    - role: Reviewer of IEEE International Conference on Intelligent Robots and Systems (IROS)
+      time: 2022
+    - role: Reviewer of IEEE International Conference on Ubiquitous Robots (UR)
+      time: 2022
+    - role: Reviewer of IEEE International Conference on Robotics and Automation (ICRA)
+      time: 2021
+    - role: Teaching Assistant of CE352 (Signal and System for Construction IT), CEE, KAIST
+      time: 2017, 2019, 2021
+    - role: Teaching Assistant of CE481 (Sensor-based Spatial Intelligence), CEE, KAIST
+      time: 2020
+    - role: Teaching Assistant of CE554 (Mechanical Design of Civil Robot), CEE, KAIST
+      time: 2018
+      
 skills:
     title: Skills &amp; Proficiency
 
