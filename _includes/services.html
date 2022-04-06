@@ -12,12 +12,12 @@
 
   <div class="services">
     
-    <div class="Reviewers-title">Reviewers</div>
+    <h3 class="Reviewers-title">Reviewers</h3>
     {% for reviewer in services.reviewers %}
     <li>{{ reviewer.role }}</li>
     {% endfor %}
       
-    <div class="TA-title">Teaching Assistants</div>
+    <h3 class="TA-title">Teaching Assistants</h3>
     {% for teaching-assistance in services.teaching-assistances %}
     <li>{{ teaching-assistance.role }}</li>
     {% endfor %}
