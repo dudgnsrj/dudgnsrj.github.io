@@ -10,27 +10,11 @@
   </h2>
 
   {% for service in services %}
-  <div class="item">
-
-    <div class="meta">
-
-      <div class="upper-row">
-        <h3 class="job-title">{{ service.role }}</h3>
-      </div><!--//upper-row-->
-
-      <div class="time">{{ service.time }}</div>
-
-    </div><!--//meta-->
-
-    {% if service.details %}
-    <div class="details">
-      {{ service.details | markdownify }}
-    </div><!--//details-->
-    {% endif %}
-
-  </div><!--//item-->
+  <h3 class="type">{{ service.type }}</h3>
+    {% for element in service %}
+    <li>{{ element.role }}</li>
+    {% endfor %}
   {% endfor %}
 
 </section><!--//section-->
 {% endif %}
-
