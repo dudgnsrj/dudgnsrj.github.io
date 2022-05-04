@@ -22,6 +22,11 @@
     <li>{{ teaching-assistance.role }}</li>
     {% endfor %}
       
+    <h4 class="Others-title">Others</h4>
+    {% for other in services.others %}
+    <li>{{ other.role }}</li>
+    {% endfor %}
+      
   </div>
 
 </section><!--//services-section-->
