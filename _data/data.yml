@@ -116,6 +116,9 @@ publications:
 services:
     title: Services
     
+    :
+      - role: Graduate School Student President
+    
     reviewers:
       - role: IEEE Robotics and Automation Letters (RA-L, 2022)
       - role: IEEE International Conference on Intelligent Robots and Systems (IROS, 2022)
