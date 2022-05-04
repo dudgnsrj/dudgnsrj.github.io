@@ -133,15 +133,11 @@ services:
 skills:
     title: Skills &amp; Proficiency
 
-    toolset:
-      - name: ROS
-        level: 90%
-      - name: C++
-        level: 50%
-      - name: Python & PyTorch
-        level: 50%
-      - name: MATLAB
-        level: 95%
+    programming-and-tools:
+      - role: ROS, C/C++, Python/PyTorch, MATLAB, QGIS, ...
+     
+    languages:
+      - role: Korean (Native), English (Fluent)
         
 footer: >
     Designed with <i class="fas fa-heart"></i> by <a href="http://themes.3rdwavemedia.com" target="_blank" rel="nofollow">Xiaoying Riley</a>
