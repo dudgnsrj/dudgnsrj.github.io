@@ -116,9 +116,6 @@ publications:
 services:
     title: Services
     
-    :
-      - role: Graduate School Student President
-    
     reviewers:
       - role: IEEE Robotics and Automation Letters (RA-L, 2022)
       - role: IEEE International Conference on Intelligent Robots and Systems (IROS, 2022)
@@ -129,7 +126,10 @@ services:
       - role: CE481 (Sensor-based Spatial Intelligence), CEE, KAIST (2020)
       - role: CE554 (Mechanical Design of Civil Robot), CEE, KAIST (2018)
       - role: CE352 (Signal and System for Construction IT), CEE, KAIST (2017, 2019, 2021)
-      
+    
+    others:
+      - role: Graduate School Student President, CEE, KAIST (2021 - 2022)
+    
 skills:
     title: Skills &amp; Proficiency
 
