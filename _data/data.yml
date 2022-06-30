@@ -82,7 +82,7 @@ publications:
       The following are the papers I have participated in. They are sorted in time order.
     papers:
       - title: STheReO: Stereo Thermal Dataset for Research in Odometry and Mapping
-        link: 
+        link: https://iros2022.org
         authors: Seungsang Yun, Minwoo JUNG, jeongyun Kim, Sangwoo Jung, Younghun Cho, Myung-Hwan Jeon, Giseop Kim, and Ayoung Kim
         conference:  IEEE/RSJ International Conference on Intelligent Robots and Systems, 2022
         
