@@ -70,6 +70,12 @@ education:
           - Bullet point
           
 experiences:
+    - role: Team Leader
+      time: 2022
+      company: Autonomous Vehicle Challenge by Ministry of Trade, Industry, and Energy
+      details: |
+        I mainly took charge of the planning part and developed global, local, speed, and behavior planning, including vehicle and pedestrian avoidance. Also, I managed the whole team as a team leader. 
+        
     - role: Research Intern
       time: 2020 - 2021
       company: NAVER LABS
