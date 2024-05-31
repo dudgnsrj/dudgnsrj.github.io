@@ -12,7 +12,7 @@ sidebar:
     avatar: profile.png  #place a 100x100 picture inside /assets/images/ folder and provide the name of the file below
 
     # Sidebar links
-    email: lucascho@kaist.ac.kr
+    email: dudgnsrj@kaist.ac.kr
     phone: 
     citizenship: 
     website: url.kr/g6fpts #do not add http://
@@ -31,13 +31,13 @@ sidebar:
 career-profile:
     title: Profile
     summary: |
-      I am a Ph.D. candidate in IRiS Lab., KAIST advised by Prof. Jee-Hwan Ryu. I obtained an M.S.(2020) at IRAP Lab., KAIST (currently RPM Robotics Lab in SNU) advised by Prof. Ayoung Kim.
+      I obtained a Ph.D. at IRiS Lab., KAIST advised by Prof. Jee-Hwan Ryu. I obtained an M.S.(2020) at IRAP Lab., KAIST (currently RPM Robotics Lab in SNU) advised by Prof. Ayoung Kim.
       My research topic focuses on the localization of autonomous vehicles without the usage of HD maps.
       
 education:
     - degree: Ph.D. in Civil and Environmental Engineering
       university: KAIST
-      time: 2020 - Current
+      time: 2020 - 2024
       details: |
         Describe your study here lorem ipsum dolor sit amet, consectetuer
         adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum
