@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>월드컵 승부의신</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">FIFA World Cup 26 Pick'em</p>
+          <h1>월드컵 승부의신</h1>
+          <p class="hero-subtitle">Canada · Mexico · USA 2026 / 조별예선 12개 그룹 · 72경기</p>
+        </div>
+        <div id="adminActions" class="hero-actions">
+          <button id="exportBtn" class="ghost-button" type="button" title="예측 데이터 내보내기">
+            <span aria-hidden="true">⇩</span>
+            내보내기
+          </button>
+          <label class="ghost-button file-button" title="예측 데이터 불러오기">
+            <span aria-hidden="true">⇧</span>
+            불러오기
+            <input id="importInput" type="file" accept="application/json" />
+          </label>
+          <button id="resetBtn" class="danger-button" type="button" title="초기화">
+            <span aria-hidden="true">↺</span>
+            초기화
+          </button>
+        </div>
+      </header>
+
+      <section class="ranking-section" aria-labelledby="rankingTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Scoreboard</p>
+            <h2 id="rankingTitle">순위표</h2>
+          </div>
+          <p class="source-note">정확한 스코어 3점 · 승무패 1점</p>
+        </div>
+        <div id="rankingList" class="ranking-list"></div>
+      </section>
+
+      <section class="progress-section" aria-labelledby="progressTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Coverage</p>
+            <h2 id="progressTitle">참가자별 예측 현황</h2>
+          </div>
+        </div>
+        <div id="participantProgress" class="participant-progress"></div>
+      </section>
+
+      <section class="stats-band" aria-label="대회 현황">
+        <article>
+          <strong>12</strong>
+          <span>그룹</span>
+        </article>
+        <article>
+          <strong>48</strong>
+          <span>국가</span>
+        </article>
+        <article>
+          <strong>72</strong>
+          <span>조별예선 경기</span>
+        </article>
+        <article>
+          <strong id="pickedStat">0/72</strong>
+          <span>현재 참가자 예측</span>
+        </article>
+        <article>
+          <strong id="resultStat">0/72</strong>
+          <span>결과 입력</span>
+        </article>
+      </section>
+
+      <section class="participant-strip" aria-label="참가자 관리">
+        <div class="participant-select-block">
+          <label for="participantSelect">예측 참가자</label>
+          <select id="participantSelect"></select>
+        </div>
+        <form id="participantForm" class="participant-form">
+          <input id="participantName" type="text" placeholder="친구 이름 추가" autocomplete="off" />
+          <button type="submit" class="primary-button">추가</button>
+        </form>
+        <button id="removeParticipantBtn" type="button" class="ghost-button">선택 삭제</button>
+      </section>
+
+      <main class="workspace">
+        <section class="groups-panel" aria-labelledby="groupsTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Groups A-L</p>
+              <h2 id="groupsTitle">조별예선 그룹</h2>
+            </div>
+            <p class="source-note">FIFA 랭킹: 2026년 4월 1일 기준</p>
+          </div>
+          <div id="groupsGrid" class="groups-grid"></div>
+        </section>
+
+        <aside class="detail-panel" aria-label="선택한 그룹과 경기">
+          <section class="selected-group-card">
+            <div class="section-heading">
+              <div>
+                <p id="selectedGroupEyebrow" class="eyebrow">Group A</p>
+                <h2 id="selectedGroupTitle">A조 일정</h2>
+              </div>
+              <span id="groupProgress" class="progress-pill">0/6</span>
+            </div>
+            <div id="selectedTeams" class="selected-teams"></div>
+          </section>
+
+          <section class="schedule-card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Fixtures</p>
+                <h2>경기 일정</h2>
+              </div>
+            </div>
+            <div id="scheduleList" class="schedule-list"></div>
+          </section>
+
+          <section class="prediction-card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Prediction</p>
+                <h2>예상 스코어</h2>
+              </div>
+              <span id="saveStatus" class="save-status">저장됨</span>
+            </div>
+            <div id="predictionPanel"></div>
+          </section>
+
+          <section id="resultCard" class="result-card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Result</p>
+                <h2>실제 결과</h2>
+              </div>
+              <span id="resultSaveStatus" class="save-status">자동 저장</span>
+            </div>
+            <div id="resultPanel"></div>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="footer-note">
+        <span>조 편성과 일정은 FIFA 공식 조추첨/일정 자료를 기준으로 구성했습니다.</span>
+        <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/final-draw-results" target="_blank" rel="noreferrer">조추첨</a>
+        <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/match-schedule-fixtures-results-teams-stadiums" target="_blank" rel="noreferrer">경기 일정</a>
+        <a href="https://inside.fifa.com/fifa-world-ranking/men" target="_blank" rel="noreferrer">FIFA 랭킹</a>
+      </footer>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
