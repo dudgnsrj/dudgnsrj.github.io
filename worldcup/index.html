@@ -76,6 +76,10 @@
       </section>
 
       <section class="participant-strip" aria-label="참가자 관리">
+        <div class="participant-intro">
+          <p class="eyebrow">Entry</p>
+          <h2>참가자 선택</h2>
+        </div>
         <div class="participant-select-block">
           <label for="participantSelect">예측 참가자</label>
           <select id="participantSelect"></select>
@@ -87,7 +91,15 @@
         <button id="removeParticipantBtn" type="button" class="ghost-button">선택 삭제</button>
       </section>
 
-      <main class="workspace">
+      <section id="startPanel" class="start-panel" aria-live="polite">
+        <div>
+          <p class="eyebrow">Kickoff</p>
+          <h2>참가자를 고르면 예측판이 열립니다</h2>
+        </div>
+        <p>순위표와 커버리지를 먼저 확인하고, 본인 이름으로 들어가 경기별 스코어를 남기세요.</p>
+      </section>
+
+      <main id="workspace" class="workspace">
         <section class="groups-panel" aria-labelledby="groupsTitle">
           <div class="section-heading">
             <div>
@@ -130,6 +142,16 @@
               <span id="saveStatus" class="save-status">저장됨</span>
             </div>
             <div id="predictionPanel"></div>
+          </section>
+
+          <section class="match-picks-card" aria-labelledby="matchPicksTitle">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Picks Board</p>
+                <h2 id="matchPicksTitle">경기별 예측 현황</h2>
+              </div>
+            </div>
+            <div id="matchPredictionsPanel"></div>
           </section>
 
           <section id="resultCard" class="result-card">

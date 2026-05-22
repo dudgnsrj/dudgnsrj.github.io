@@ -1,4 +1,4 @@
-const STORAGE_KEY = "worldcup-god-pickem-v4";
+const STORAGE_KEY = "worldcup-god-pickem-v5";
 const API_BASE = "/api";
 const SYNC_INTERVAL_MS = 5000;
 const RANKING_AS_OF = "2026-04-01";
@@ -159,7 +159,12 @@ const MATCHES = [
   { id: "M68", no: 68, group: "L", date: "2026-06-27", time: "5:00 p.m. UTC-4", home: "CRO", away: "GHA", venue: "Lincoln Financial Field", city: "Philadelphia" },
 ];
 
+const AI_PARTICIPANT = Object.freeze({ id: "person-ai-worldcup-god", name: "AI 승부의신", isAi: true });
+const AI_PREDICTIONS = buildAiPredictions();
+
 const els = {
+  workspace: document.querySelector("#workspace"),
+  startPanel: document.querySelector("#startPanel"),
   groupsGrid: document.querySelector("#groupsGrid"),
   selectedGroupEyebrow: document.querySelector("#selectedGroupEyebrow"),
   selectedGroupTitle: document.querySelector("#selectedGroupTitle"),
@@ -167,6 +172,7 @@ const els = {
   groupProgress: document.querySelector("#groupProgress"),
   scheduleList: document.querySelector("#scheduleList"),
   predictionPanel: document.querySelector("#predictionPanel"),
+  matchPredictionsPanel: document.querySelector("#matchPredictionsPanel"),
   resultPanel: document.querySelector("#resultPanel"),
   saveStatus: document.querySelector("#saveStatus"),
   resultSaveStatus: document.querySelector("#resultSaveStatus"),
@@ -200,10 +206,10 @@ function defaultState() {
       { id: "person-cho-sihun", name: "조시훈" },
       { id: "person-kim-hyunsung", name: "김현성" },
     ],
-    selectedParticipantId: "person-cho-younghun",
+    selectedParticipantId: "",
     selectedGroup: "A",
     selectedMatchId: "M1",
-    predictions: {},
+    predictions: { [AI_PARTICIPANT.id]: { ...AI_PREDICTIONS } },
     results: {},
   };
 }
@@ -217,18 +223,33 @@ function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved || typeof saved !== "object") return defaultState();
-    return { ...defaultState(), ...saved };
+    return { ...defaultState(), ...saved, selectedParticipantId: "" };
   } catch {
     return defaultState();
   }
 }
 
 function normaliseState() {
+  const seenParticipants = new Set();
   state.participants = Array.isArray(state.participants)
-    ? state.participants.filter((participant) => participant?.id && participant?.name)
+    ? state.participants
+      .filter((participant) => participant?.id && participant?.name)
+      .map((participant) => (
+        participant.id === AI_PARTICIPANT.id
+          ? { ...AI_PARTICIPANT }
+          : { id: participant.id, name: participant.name }
+      ))
+      .filter((participant) => {
+        if (seenParticipants.has(participant.id)) return false;
+        seenParticipants.add(participant.id);
+        return true;
+      })
     : [];
   state.predictions = state.predictions && typeof state.predictions === "object" ? state.predictions : {};
   state.results = state.results && typeof state.results === "object" ? state.results : {};
+  state.participants = state.participants.filter((participant) => participant.id !== AI_PARTICIPANT.id);
+  state.participants.push({ ...AI_PARTICIPANT });
+  state.predictions[AI_PARTICIPANT.id] = { ...AI_PREDICTIONS };
 
   if (!GROUPS.some((group) => group.id === state.selectedGroup)) {
     state.selectedGroup = "A";
@@ -239,7 +260,7 @@ function normaliseState() {
   }
 
   if (!state.participants.some((participant) => participant.id === state.selectedParticipantId)) {
-    state.selectedParticipantId = state.participants[0]?.id || "";
+    state.selectedParticipantId = "";
   }
 }
 
@@ -249,10 +270,16 @@ function saveState() {
 
 function sharedState() {
   return {
-    participants: state.participants,
-    predictions: state.predictions,
+    participants: state.participants.filter((participant) => !participantIsAi(participant.id)),
+    predictions: persistablePredictions(),
     results: state.results,
   };
+}
+
+function persistablePredictions() {
+  return Object.fromEntries(
+    Object.entries(state.predictions || {}).filter(([participantId]) => !participantIsAi(participantId)),
+  );
 }
 
 function applySharedState(shared) {
@@ -495,19 +522,24 @@ function render() {
   renderMode();
   renderParticipantSelect();
   renderStats();
-  renderGroups();
-  renderSelectedGroup();
-  renderSchedule();
-  renderPredictionPanel();
-  if (IS_ADMIN) renderResultPanel();
   renderLeaderboard();
   renderParticipantProgress();
+  const hasSelectedParticipant = Boolean(currentParticipant());
+  renderEntryState(hasSelectedParticipant);
+  if (hasSelectedParticipant) {
+    renderGroups();
+    renderSelectedGroup();
+    renderSchedule();
+    renderPredictionPanel();
+    renderMatchPredictionsPanel();
+    if (IS_ADMIN) renderResultPanel();
+  }
   saveState();
 }
 
 function renderMode() {
   els.adminActions.hidden = !IS_ADMIN;
-  els.participantForm.hidden = !IS_ADMIN;
+  els.participantForm.hidden = false;
   els.removeParticipantBtn.hidden = !IS_ADMIN;
   els.resultCard.hidden = !IS_ADMIN;
 }
@@ -524,11 +556,17 @@ function renderParticipantSelect() {
   }
 
   els.participantSelect.disabled = false;
-  els.removeParticipantBtn.disabled = false;
+  els.removeParticipantBtn.disabled = !IS_ADMIN || !selected || participantIsAi(selected);
+  els.participantSelect.append(optionNode("", "참가자 선택"));
   state.participants.forEach((participant) => {
     els.participantSelect.append(optionNode(participant.id, participant.name));
   });
   els.participantSelect.value = selected;
+}
+
+function renderEntryState(hasSelectedParticipant) {
+  els.startPanel.hidden = hasSelectedParticipant;
+  els.workspace.hidden = !hasSelectedParticipant;
 }
 
 function renderStats() {
@@ -610,8 +648,9 @@ function renderPredictionPanel() {
   const pick = getPrediction(participant?.id, match.id);
   const home = getTeam(match.home);
   const away = getTeam(match.away);
+  const locked = participantIsAi(participant?.id);
   els.predictionPanel.replaceChildren();
-  els.saveStatus.textContent = participant ? "자동 저장" : "참가자 필요";
+  els.saveStatus.textContent = locked ? "AI 예측" : "자동 저장";
 
   const panel = h("div", { className: "prediction-inner" });
   const header = h("div", { className: "prediction-match-meta" }, [
@@ -622,11 +661,11 @@ function renderPredictionPanel() {
 
   const homeInput = scoreInput(pick?.home);
   const awayInput = scoreInput(pick?.away);
-  homeInput.disabled = !participant;
-  awayInput.disabled = !participant;
+  homeInput.disabled = !participant || locked;
+  awayInput.disabled = !participant || locked;
 
   const saveCurrentPrediction = () => {
-    if (!participant) return;
+    if (!participant || locked) return;
     const score = normaliseScore(homeInput.value, awayInput.value);
     setPrediction(participant.id, match.id, score);
     flashSaved(hasScore(score) ? "저장됨" : "비어 있음");
@@ -634,6 +673,7 @@ function renderPredictionPanel() {
     renderGroups();
     renderSelectedGroup();
     renderSchedule();
+    renderMatchPredictionsPanel();
     renderParticipantProgress();
   };
 
@@ -652,9 +692,9 @@ function renderPredictionPanel() {
 
   const actions = h("div", { className: "prediction-actions" });
   const clear = h("button", { className: "ghost-button", type: "button", text: "예측 지우기" });
-  clear.disabled = !participant || !pick;
+  clear.disabled = !participant || !pick || locked;
   clear.addEventListener("click", () => {
-    if (!participant) return;
+    if (!participant || locked) return;
     deletePrediction(participant.id, match.id);
     render();
     flashSaved("삭제됨");
@@ -663,7 +703,9 @@ function renderPredictionPanel() {
 
   const helper = h("p", {
     className: "prediction-helper",
-    text: participant
+    text: locked
+      ? `${participant.name}의 랭킹 기반 자동 예측입니다.`
+      : participant
       ? `${participant.name}님의 ${home.ko} vs ${away.ko} 예상 스코어를 입력하세요.`
       : "참가자를 추가하면 경기별 예상 스코어를 저장할 수 있습니다.",
   });
@@ -696,6 +738,7 @@ function renderResultPanel() {
     flashResultSaved(hasScore(score) ? "저장됨" : "비어 있음");
     renderStats();
     renderSchedule();
+    renderMatchPredictionsPanel();
     renderLeaderboard();
     renderParticipantProgress();
   };
@@ -732,6 +775,33 @@ function renderResultPanel() {
   els.resultPanel.append(panel);
 }
 
+function renderMatchPredictionsPanel() {
+  const match = currentMatch();
+  const result = getResult(match.id);
+  els.matchPredictionsPanel.replaceChildren();
+
+  const list = h("div", { className: "match-picks-list" });
+  state.participants.forEach((participant) => {
+    const pick = getPrediction(participant.id, match.id);
+    const score = scorePrediction(pick, result);
+    const isCurrent = participant.id === state.selectedParticipantId;
+    const card = h("article", {
+      className: `match-pick-card${isCurrent ? " current" : ""}${participantIsAi(participant.id) ? " ai-card" : ""}`,
+    });
+
+    card.append(
+      h("div", { className: "match-pick-heading" }, [
+        h("strong", { text: participant.name }),
+        h("span", { text: matchPickStatusText(pick, result, score) }),
+      ]),
+      readOnlyScoreBoard(match, pick),
+    );
+    list.append(card);
+  });
+
+  els.matchPredictionsPanel.append(list);
+}
+
 function renderLeaderboard() {
   els.rankingList.replaceChildren();
   const rows = getLeaderboard();
@@ -741,7 +811,7 @@ function renderLeaderboard() {
   }
 
   rows.forEach((row, index) => {
-    const rankCard = h("article", { className: `rank-card${index === 0 ? " top" : ""}` }, [
+    const rankCard = h("article", { className: `rank-card${index === 0 ? " top" : ""}${participantIsAi(row.id) ? " ai-card" : ""}` }, [
       h("div", { className: "rank-number", text: index + 1 }),
       h("div", { className: "rank-main" }, [
         h("strong", { text: row.name }),
@@ -767,7 +837,7 @@ function renderParticipantProgress() {
     const picked = countPredictions(participant.id);
     const rank = getLeaderboard().find((entry) => entry.id === participant.id);
     const percent = Math.round((picked / MATCHES.length) * 100);
-    const row = h("article", { className: "progress-card" }, [
+    const row = h("article", { className: `progress-card${participantIsAi(participant.id) ? " ai-card" : ""}` }, [
       h("div", { className: "progress-card-top" }, [
         h("strong", { text: participant.name }),
         h("span", { text: `${rank?.points || 0}점` }),
@@ -791,11 +861,11 @@ function selectMatch(matchId) {
   state.selectedMatchId = matchId;
   renderSchedule();
   renderPredictionPanel();
+  renderMatchPredictionsPanel();
   if (IS_ADMIN) renderResultPanel();
 }
 
 function addParticipant(name) {
-  if (!IS_ADMIN) return;
   const cleanName = name.trim();
   if (!cleanName) return;
   const duplicated = state.participants.some((participant) => participant.name.toLowerCase() === cleanName.toLowerCase());
@@ -814,11 +884,12 @@ function removeCurrentParticipant() {
   if (!IS_ADMIN) return;
   const participant = currentParticipant();
   if (!participant) return;
+  if (participantIsAi(participant.id)) return;
   const ok = window.confirm(`${participant.name}님과 해당 예측을 삭제할까요?`);
   if (!ok) return;
   state.participants = state.participants.filter((item) => item.id !== participant.id);
   delete state.predictions[participant.id];
-  state.selectedParticipantId = state.participants[0]?.id || "";
+  state.selectedParticipantId = "";
   render();
   pushSharedState(`/participants/${encodeURIComponent(participant.id)}`, { method: "DELETE" });
 }
@@ -833,6 +904,10 @@ function currentMatch() {
 
 function currentParticipant() {
   return state.participants.find((participant) => participant.id === state.selectedParticipantId) || null;
+}
+
+function participantIsAi(participantId) {
+  return participantId === AI_PARTICIPANT.id;
 }
 
 function matchesForGroup(groupId) {
@@ -853,6 +928,7 @@ function getResult(matchId) {
 }
 
 function setPrediction(participantId, matchId, score) {
+  if (participantIsAi(participantId)) return;
   state.predictions[participantId] = state.predictions[participantId] || {};
   if (!hasAnyScore(score)) {
     delete state.predictions[participantId][matchId];
@@ -883,6 +959,7 @@ function setResult(matchId, score) {
 }
 
 function deletePrediction(participantId, matchId) {
+  if (participantIsAi(participantId)) return;
   if (state.predictions[participantId]) {
     delete state.predictions[participantId][matchId];
     saveState();
@@ -960,6 +1037,54 @@ function fixtureStatusText(pick, result) {
   const pickText = hasScore(pick) ? `예측 ${pick.home}-${pick.away}` : "예측 전";
   const resultText = hasScore(result) ? `결과 ${result.home}-${result.away}` : "결과 전";
   return `${pickText} · ${resultText}`;
+}
+
+function matchPickStatusText(pick, result, score) {
+  if (!hasScore(pick)) return "예측 전";
+  if (!hasScore(result)) return `예측 ${pick.home}-${pick.away}`;
+  if (score.exact) return `정확한 스코어 · ${score.points}점`;
+  if (score.outcome) return `승무패 적중 · ${score.points}점`;
+  return "0점";
+}
+
+function readOnlyScoreBoard(match, score) {
+  const hasPick = hasScore(score);
+  return h("div", { className: "score-board compact-score-board readonly-score-board" }, [
+    predictionTeam(match.home, "home"),
+    h("div", { className: "score-entry readonly-score" }, [
+      h("strong", { text: hasPick ? score.home : "-" }),
+      h("span", { text: ":" }),
+      h("strong", { text: hasPick ? score.away : "-" }),
+    ]),
+    predictionTeam(match.away, "away"),
+  ]);
+}
+
+function buildAiPredictions() {
+  return Object.fromEntries(MATCHES.map((match) => [match.id, aiScoreForMatch(match)]));
+}
+
+function aiScoreForMatch(match) {
+  const hosts = new Set(["CAN", "MEX", "USA"]);
+  const home = getTeam(match.home);
+  const away = getTeam(match.away);
+  const homeBoost = hosts.has(match.home) ? 8 : 0;
+  const awayBoost = hosts.has(match.away) ? 8 : 0;
+  const diff = away.rank - home.rank + homeBoost - awayBoost;
+  const pulse = (stableHash(`${match.id}-${match.home}-${match.away}`) % 5) - 2;
+  const signal = diff + pulse;
+
+  if (signal >= 42) return { home: 3, away: 0 };
+  if (signal >= 24) return { home: 2, away: 0 };
+  if (signal >= 9) return { home: 2, away: 1 };
+  if (signal > -9) return { home: 1, away: 1 };
+  if (signal > -24) return { home: 1, away: 2 };
+  if (signal > -42) return { home: 0, away: 2 };
+  return { home: 0, away: 3 };
+}
+
+function stableHash(value) {
+  return [...value].reduce((acc, char) => ((acc * 31) + char.charCodeAt(0)) >>> 0, 7);
 }
 
 function normaliseScore(home, away) {
