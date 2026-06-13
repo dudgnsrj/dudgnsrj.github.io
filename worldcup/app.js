@@ -3,6 +3,7 @@ const API_BASE = "/api";
 const SYNC_INTERVAL_MS = 5000;
 const RANKING_AS_OF = "2026-04-01";
 const IS_ADMIN = new URLSearchParams(window.location.search).get("admin") === "1";
+const PREDICTIONS_LOCKED = true;
 const SUPABASE_URL = "https://tvhlonufurkazdykmomy.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_LAMJL5DR3A4gfb4vC_4nzg_BKMTvW9H";
 const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
@@ -683,7 +684,7 @@ function renderPredictionPanel() {
   const away = getTeam(match.away);
   const locked = participantIsAi(participant?.id);
   els.predictionPanel.replaceChildren();
-  els.saveStatus.textContent = locked ? "AI 예측" : "자동 저장";
+  els.saveStatus.textContent = locked ? "AI 예측" : "예측 잠금";
 
   const panel = h("div", { className: "prediction-inner" });
   const header = h("div", { className: "prediction-match-meta" }, [
@@ -692,58 +693,18 @@ function renderPredictionPanel() {
     h("span", { text: `${match.venue}, ${match.city}` }),
   ]);
 
-  const homeInput = scoreInput(pick?.home);
-  const awayInput = scoreInput(pick?.away);
-  homeInput.disabled = !participant || locked;
-  awayInput.disabled = !participant || locked;
-
-  const saveCurrentPrediction = () => {
-    if (!participant || locked) return;
-    const score = normaliseScore(homeInput.value, awayInput.value);
-    setPrediction(participant.id, match.id, score);
-    flashSaved(hasScore(score) ? "저장됨" : "비어 있음");
-    renderStats();
-    renderGroups();
-    renderSelectedGroup();
-    renderSchedule();
-    renderMatchPredictionsPanel();
-    renderParticipantProgress();
-  };
-
-  homeInput.addEventListener("input", saveCurrentPrediction);
-  awayInput.addEventListener("input", saveCurrentPrediction);
-
-  const scoreBoard = h("div", { className: `score-board${predictionResultClass(pick, result)}` }, [
-    predictionTeam(match.home, "home"),
-    h("div", { className: "score-entry" }, [
-      homeInput,
-      h("span", { text: ":" }),
-      awayInput,
-    ]),
-    predictionTeam(match.away, "away"),
-  ]);
-
-  const actions = h("div", { className: "prediction-actions" });
-  const clear = h("button", { className: "ghost-button", type: "button", text: "예측 지우기" });
-  clear.disabled = !participant || !pick || locked;
-  clear.addEventListener("click", () => {
-    if (!participant || locked) return;
-    deletePrediction(participant.id, match.id);
-    render();
-    flashSaved("삭제됨");
-  });
-  actions.append(clear);
+  const scoreBoard = readOnlyScoreBoard(match, pick, result);
 
   const helper = h("p", {
     className: "prediction-helper",
     text: locked
       ? `${participant.name}의 랭킹 기반 자동 예측입니다.`
       : participant
-      ? `${participant.name}님의 ${home.ko} vs ${away.ko} 예상 스코어를 입력하세요.`
-      : "참가자를 추가하면 경기별 예상 스코어를 저장할 수 있습니다.",
+      ? `${participant.name}님의 ${home.ko} vs ${away.ko} 예측은 대회 시작으로 잠겼습니다.`
+      : "대회 시작으로 예측 입력이 잠겼습니다.",
   });
 
-  panel.append(header, scoreBoard, actions, helper);
+  panel.append(header, scoreBoard, helper);
   els.predictionPanel.append(panel);
 }
 
@@ -944,9 +905,13 @@ function renderMatchReport(matchId, isImplicitHome = false) {
   els.matchReportEyebrow.textContent = isImplicitHome ? "Next Match" : `Group ${match.group} · Match ${match.no}`;
   els.matchReportTitle.textContent = `${home.ko} vs ${away.ko}`;
   els.closeMatchReportBtn.hidden = isImplicitHome;
-  els.editMatchPredictionBtn.hidden = !hasSelectedParticipant;
-  els.editMatchPredictionBtn.disabled = participantIsAi(state.selectedParticipantId);
-  els.editMatchPredictionBtn.textContent = participantIsAi(state.selectedParticipantId) ? "AI 예측은 읽기 전용" : "내 예측 입력";
+  els.editMatchPredictionBtn.hidden = PREDICTIONS_LOCKED || !hasSelectedParticipant;
+  els.editMatchPredictionBtn.disabled = PREDICTIONS_LOCKED || participantIsAi(state.selectedParticipantId);
+  els.editMatchPredictionBtn.textContent = PREDICTIONS_LOCKED
+    ? "예측 잠금"
+    : participantIsAi(state.selectedParticipantId)
+    ? "AI 예측은 읽기 전용"
+    : "내 예측 입력";
 
   els.matchReportSummary.replaceChildren(
     h("article", { className: "match-report-main" }, [
@@ -1096,6 +1061,7 @@ function getResult(matchId) {
 }
 
 function setPrediction(participantId, matchId, score) {
+  if (PREDICTIONS_LOCKED) return;
   if (participantIsAi(participantId)) return;
   state.predictions[participantId] = state.predictions[participantId] || {};
   if (!hasAnyScore(score)) {
@@ -1127,6 +1093,7 @@ function setResult(matchId, score) {
 }
 
 function deletePrediction(participantId, matchId) {
+  if (PREDICTIONS_LOCKED) return;
   if (participantIsAi(participantId)) return;
   if (state.predictions[participantId]) {
     delete state.predictions[participantId][matchId];
@@ -1235,6 +1202,7 @@ function closeMatchReport() {
 }
 
 function showMatchPredictionEditor() {
+  if (PREDICTIONS_LOCKED) return;
   const match = matchById(activeMatchReportId || state.selectedMatchId) || nextMatchByTime() || MATCHES[0];
   if (!match || !currentParticipant() || participantIsAi(state.selectedParticipantId)) return;
   state.selectedGroup = match.group;
