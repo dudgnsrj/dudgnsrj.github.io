@@ -170,6 +170,13 @@ const els = {
   participantReportSummary: document.querySelector("#participantReportSummary"),
   participantReportList: document.querySelector("#participantReportList"),
   closeReportBtn: document.querySelector("#closeReportBtn"),
+  matchReportPage: document.querySelector("#matchReportPage"),
+  matchReportEyebrow: document.querySelector("#matchReportEyebrow"),
+  matchReportTitle: document.querySelector("#matchReportTitle"),
+  matchReportSummary: document.querySelector("#matchReportSummary"),
+  matchReportPredictions: document.querySelector("#matchReportPredictions"),
+  editMatchPredictionBtn: document.querySelector("#editMatchPredictionBtn"),
+  closeMatchReportBtn: document.querySelector("#closeMatchReportBtn"),
   participantStrip: document.querySelector(".participant-strip"),
   groupsGrid: document.querySelector("#groupsGrid"),
   selectedGroupEyebrow: document.querySelector("#selectedGroupEyebrow"),
@@ -201,6 +208,7 @@ let state = loadState();
 let serverOnline = false;
 let lastSyncAt = null;
 let activeReportParticipantId = "";
+let activeMatchReportId = "";
 normaliseState();
 render();
 syncFromServer();
@@ -534,11 +542,19 @@ function render() {
   if (activeReportParticipantId && !participantById(activeReportParticipantId)) {
     activeReportParticipantId = "";
   }
-  const hasActiveReport = Boolean(activeReportParticipantId);
+  if (activeMatchReportId && !matchById(activeMatchReportId)) {
+    activeMatchReportId = "";
+  }
+  const hasActiveParticipantReport = Boolean(activeReportParticipantId);
   const hasSelectedParticipant = Boolean(currentParticipant());
-  renderEntryState(hasSelectedParticipant, hasActiveReport);
-  if (hasActiveReport) {
+  const implicitMatchReportId = hasSelectedParticipant || hasActiveParticipantReport ? "" : nextMatchByTime()?.id;
+  const matchReportId = activeMatchReportId || implicitMatchReportId;
+  const hasActiveMatchReport = Boolean(matchReportId);
+  renderEntryState(hasSelectedParticipant, hasActiveParticipantReport, hasActiveMatchReport);
+  if (hasActiveParticipantReport) {
     renderParticipantReport();
+  } else if (hasActiveMatchReport) {
+    renderMatchReport(matchReportId, !activeMatchReportId);
   } else if (hasSelectedParticipant) {
     renderGroups();
     renderSelectedGroup();
@@ -577,11 +593,12 @@ function renderParticipantSelect() {
   els.participantSelect.value = selected;
 }
 
-function renderEntryState(hasSelectedParticipant, hasActiveReport) {
-  els.participantStrip.hidden = hasActiveReport;
-  els.participantReportPage.hidden = !hasActiveReport;
-  els.startPanel.hidden = hasActiveReport || hasSelectedParticipant;
-  els.workspace.hidden = hasActiveReport || !hasSelectedParticipant;
+function renderEntryState(hasSelectedParticipant, hasActiveParticipantReport, hasActiveMatchReport) {
+  els.participantStrip.hidden = hasActiveParticipantReport;
+  els.participantReportPage.hidden = !hasActiveParticipantReport;
+  els.matchReportPage.hidden = !hasActiveMatchReport || hasActiveParticipantReport;
+  els.startPanel.hidden = hasActiveParticipantReport || hasActiveMatchReport || hasSelectedParticipant;
+  els.workspace.hidden = hasActiveParticipantReport || hasActiveMatchReport || !hasSelectedParticipant;
 }
 
 function renderStats() {
@@ -635,7 +652,7 @@ function renderSchedule() {
       type: "button",
       "aria-pressed": String(selected),
     });
-    row.addEventListener("click", () => selectMatch(match.id));
+    row.addEventListener("click", () => openMatchReport(match.id));
 
     row.append(
       h("div", { className: "fixture-meta" }, [
@@ -793,29 +810,35 @@ function renderResultPanel() {
 
 function renderMatchPredictionsPanel() {
   const match = currentMatch();
-  const result = getResult(match.id);
   els.matchPredictionsPanel.replaceChildren();
+  els.matchPredictionsPanel.append(matchPredictionsList(match));
+}
 
+function matchPredictionsList(match) {
   const list = h("div", { className: "match-picks-list" });
   state.participants.forEach((participant) => {
-    const pick = getPrediction(participant.id, match.id);
-    const score = scorePrediction(pick, result);
-    const isCurrent = participant.id === state.selectedParticipantId;
-    const card = h("article", {
-      className: `match-pick-card${isCurrent ? " current" : ""}${participantIsAi(participant.id) ? " ai-card" : ""}${predictionResultClass(pick, result)}`,
-    });
+    list.append(matchPickCard(match, participant));
+  });
+  return list;
+}
 
-    card.append(
-      h("div", { className: "match-pick-heading" }, [
-        h("strong", { text: participant.name }),
-        h("span", { text: matchPickStatusText(pick, result, score) }),
-      ]),
-      readOnlyScoreBoard(match, pick, result),
-    );
-    list.append(card);
+function matchPickCard(match, participant) {
+  const result = getResult(match.id);
+  const pick = getPrediction(participant.id, match.id);
+  const score = scorePrediction(pick, result);
+  const isCurrent = participant.id === state.selectedParticipantId;
+  const card = h("article", {
+    className: `match-pick-card${isCurrent ? " current" : ""}${participantIsAi(participant.id) ? " ai-card" : ""}${predictionResultClass(pick, result)}`,
   });
 
-  els.matchPredictionsPanel.append(list);
+  card.append(
+    h("div", { className: "match-pick-heading" }, [
+      h("strong", { text: participant.name }),
+      h("span", { text: matchPickStatusText(pick, result, score) }),
+    ]),
+    readOnlyScoreBoard(match, pick, result),
+  );
+  return card;
 }
 
 function renderLeaderboard() {
@@ -909,6 +932,50 @@ function renderParticipantReport() {
   els.participantReportList.append(matches);
 }
 
+function renderMatchReport(matchId, isImplicitHome = false) {
+  const match = matchById(matchId) || nextMatchByTime() || MATCHES[0];
+  const home = getTeam(match.home);
+  const away = getTeam(match.away);
+  const result = getResult(match.id);
+  const pickedCount = state.participants.filter((participant) => hasScore(getPrediction(participant.id, match.id))).length;
+  const scored = matchScoreSummary(match);
+  const hasSelectedParticipant = Boolean(currentParticipant());
+
+  els.matchReportEyebrow.textContent = isImplicitHome ? "Next Match" : `Group ${match.group} · Match ${match.no}`;
+  els.matchReportTitle.textContent = `${home.ko} vs ${away.ko}`;
+  els.closeMatchReportBtn.hidden = isImplicitHome;
+  els.editMatchPredictionBtn.hidden = !hasSelectedParticipant;
+  els.editMatchPredictionBtn.disabled = participantIsAi(state.selectedParticipantId);
+  els.editMatchPredictionBtn.textContent = participantIsAi(state.selectedParticipantId) ? "AI 예측은 읽기 전용" : "내 예측 입력";
+
+  els.matchReportSummary.replaceChildren(
+    h("article", { className: "match-report-main" }, [
+      h("div", { className: "match-report-meta" }, [
+        h("span", { text: `${match.group}조 · Match ${match.no}` }),
+        h("span", { text: `${formatKoreaDate(match)} · ${formatKoreaTime(match)}` }),
+        h("span", { text: `${match.venue}, ${match.city}` }),
+      ]),
+      matchTeamsBoard(match, result),
+    ]),
+    h("div", { className: "match-report-stat-grid" }, [
+      reportStat("예측 참여", `${pickedCount}/${state.participants.length}`),
+      reportStat("결과", formatScore(result, "결과 전")),
+      reportStat("정확/승무패", hasScore(result) ? `${scored.exact}/${scored.outcomeOnly}` : "-"),
+    ]),
+  );
+
+  els.matchReportPredictions.replaceChildren(
+    h("div", { className: "section-heading" }, [
+      h("div", {}, [
+        h("p", { className: "eyebrow", text: "Picks Board" }),
+        h("h2", { text: "모든 참가자 예측" }),
+      ]),
+      h("p", { className: "source-note", text: hasScore(result) ? "채점 완료" : "결과 입력 전" }),
+    ]),
+    matchPredictionsList(match),
+  );
+}
+
 function participantReportMatch(match, pick, result, scored) {
   const home = getTeam(match.home);
   const away = getTeam(match.away);
@@ -916,7 +983,11 @@ function participantReportMatch(match, pick, result, scored) {
     ? matchPickStatusText(pick, result, scored)
     : "결과 전";
 
-  return h("article", { className: `report-match-card${predictionResultClass(pick, result)}` }, [
+  const card = h("button", {
+    className: `report-match-card${predictionResultClass(pick, result)}`,
+    type: "button",
+    title: `${home.ko} vs ${away.ko} 경기 예측 현황 보기`,
+  }, [
     h("div", { className: "report-match-head" }, [
       h("div", { className: "report-match-title" }, [
         h("span", { text: `${match.group}조 · Match ${match.no}` }),
@@ -930,6 +1001,8 @@ function participantReportMatch(match, pick, result, scored) {
       reportScoreBlock("점수", hasScore(result) && hasScore(pick) ? `${scored.points}점` : "-", scoreText),
     ]),
   ]);
+  card.addEventListener("click", () => openMatchReport(match.id));
+  return card;
 }
 
 function selectGroup(groupId) {
@@ -939,11 +1012,7 @@ function selectGroup(groupId) {
 }
 
 function selectMatch(matchId) {
-  state.selectedMatchId = matchId;
-  renderSchedule();
-  renderPredictionPanel();
-  renderMatchPredictionsPanel();
-  if (IS_ADMIN) renderResultPanel();
+  openMatchReport(matchId);
 }
 
 function addParticipant(name) {
@@ -980,7 +1049,7 @@ function currentGroup() {
 }
 
 function currentMatch() {
-  return MATCHES.find((match) => match.id === state.selectedMatchId) || MATCHES[0];
+  return matchById(state.selectedMatchId) || MATCHES[0];
 }
 
 function currentParticipant() {
@@ -995,8 +1064,22 @@ function participantIsAi(participantId) {
   return participantId === AI_PARTICIPANT.id;
 }
 
+function matchById(matchId) {
+  return MATCHES.find((match) => match.id === matchId) || null;
+}
+
 function matchesForGroup(groupId) {
   return MATCHES.filter((match) => match.group === groupId);
+}
+
+function nextMatchByTime(now = new Date()) {
+  const sorted = [...MATCHES].sort((a, b) => koreaDateFromMatch(a) - koreaDateFromMatch(b) || a.no - b.no);
+  return (
+    sorted.find((match) => !hasScore(getResult(match.id)) && koreaDateFromMatch(match) >= now)
+    || sorted.find((match) => !hasScore(getResult(match.id)))
+    || sorted[sorted.length - 1]
+    || null
+  );
 }
 
 function getTeam(code) {
@@ -1132,7 +1215,38 @@ function predictionResultClass(pick, result) {
   return "";
 }
 
+function openMatchReport(matchId) {
+  const match = matchById(matchId);
+  if (!match) return;
+  state.selectedGroup = match.group;
+  state.selectedMatchId = match.id;
+  activeReportParticipantId = "";
+  activeMatchReportId = match.id;
+  render();
+  els.matchReportPage.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeMatchReport() {
+  activeMatchReportId = "";
+  render();
+  if (currentParticipant()) {
+    els.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function showMatchPredictionEditor() {
+  const match = matchById(activeMatchReportId || state.selectedMatchId) || nextMatchByTime() || MATCHES[0];
+  if (!match || !currentParticipant() || participantIsAi(state.selectedParticipantId)) return;
+  state.selectedGroup = match.group;
+  state.selectedMatchId = match.id;
+  activeReportParticipantId = "";
+  activeMatchReportId = "";
+  render();
+  els.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function openParticipantReport(participantId) {
+  activeMatchReportId = "";
   activeReportParticipantId = participantId;
   render();
   els.participantReportPage.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1182,6 +1296,34 @@ function readOnlyScoreBoard(match, score, result) {
     ]),
     predictionTeam(match.away, "away"),
   ]);
+}
+
+function matchTeamsBoard(match, result) {
+  const scoreChildren = hasScore(result)
+    ? [
+      h("strong", { text: result.home }),
+      h("span", { text: ":" }),
+      h("strong", { text: result.away }),
+    ]
+    : [h("span", { text: "vs" })];
+
+  return h("div", { className: "score-board match-report-score-board" }, [
+    predictionTeam(match.home, "home"),
+    h("div", { className: "score-entry readonly-score match-versus-score" }, scoreChildren),
+    predictionTeam(match.away, "away"),
+  ]);
+}
+
+function matchScoreSummary(match) {
+  return state.participants.reduce(
+    (acc, participant) => {
+      const score = scorePrediction(getPrediction(participant.id, match.id), getResult(match.id));
+      if (score.exact) acc.exact += 1;
+      else if (score.outcome) acc.outcomeOnly += 1;
+      return acc;
+    },
+    { exact: 0, outcomeOnly: 0 },
+  );
 }
 
 function buildAiPredictions() {
@@ -1493,6 +1635,8 @@ els.participantSelect.addEventListener("change", () => {
 
 els.removeParticipantBtn.addEventListener("click", removeCurrentParticipant);
 els.closeReportBtn.addEventListener("click", closeParticipantReport);
+els.closeMatchReportBtn.addEventListener("click", closeMatchReport);
+els.editMatchPredictionBtn.addEventListener("click", showMatchPredictionEditor);
 els.exportBtn.addEventListener("click", exportState);
 els.importInput.addEventListener("change", (event) => importState(event.target.files[0]));
 els.resetBtn.addEventListener("click", resetState);
