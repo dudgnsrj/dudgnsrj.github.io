@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>월드컵 승부의신</title>
-    <link rel="stylesheet" href="./styles.css?v=20260613-kst-times" />
+    <link rel="stylesheet" href="./styles.css?v=20260613-participant-report" />
   </head>
   <body>
     <div class="app-shell">
@@ -99,6 +99,18 @@
         <p>순위표와 커버리지를 먼저 확인하고, 본인 이름으로 들어가 경기별 스코어를 남기세요.</p>
       </section>
 
+      <section id="participantReportPage" class="participant-report-page" aria-labelledby="participantReportTitle" hidden>
+        <div class="report-hero">
+          <div>
+            <p class="eyebrow">Read Only Report</p>
+            <h2 id="participantReportTitle">참가자 예측 리포트</h2>
+          </div>
+          <button id="closeReportBtn" class="ghost-button" type="button">돌아가기</button>
+        </div>
+        <div id="participantReportSummary" class="report-summary"></div>
+        <div id="participantReportList" class="participant-report-list"></div>
+      </section>
+
       <main id="workspace" class="workspace">
         <section class="groups-panel" aria-labelledby="groupsTitle">
           <div class="section-heading">
@@ -175,6 +187,6 @@
       </footer>
     </div>
 
-    <script src="./app.js?v=20260613-kst-times"></script>
+    <script src="./app.js?v=20260613-participant-report"></script>
   </body>
 </html>
