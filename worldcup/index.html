@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>월드컵 승부의신</title>
-    <link rel="stylesheet" href="./styles.css?v=20260613-result-colors" />
+    <link rel="stylesheet" href="./styles.css?v=20260613-match-pages" />
   </head>
   <body>
     <div class="app-shell">
@@ -111,6 +111,21 @@
         <div id="participantReportList" class="participant-report-list"></div>
       </section>
 
+      <section id="matchReportPage" class="match-report-page" aria-labelledby="matchReportTitle" hidden>
+        <div class="report-hero">
+          <div>
+            <p id="matchReportEyebrow" class="eyebrow">Match Report</p>
+            <h2 id="matchReportTitle">경기별 예측 현황</h2>
+          </div>
+          <div class="report-actions">
+            <button id="editMatchPredictionBtn" class="primary-button" type="button">내 예측 입력</button>
+            <button id="closeMatchReportBtn" class="ghost-button" type="button">돌아가기</button>
+          </div>
+        </div>
+        <div id="matchReportSummary" class="match-report-summary"></div>
+        <div id="matchReportPredictions" class="match-report-predictions"></div>
+      </section>
+
       <main id="workspace" class="workspace">
         <section class="groups-panel" aria-labelledby="groupsTitle">
           <div class="section-heading">
@@ -187,6 +202,6 @@
       </footer>
     </div>
 
-    <script src="./app.js?v=20260613-result-colors"></script>
+    <script src="./app.js?v=20260613-match-pages"></script>
   </body>
 </html>
