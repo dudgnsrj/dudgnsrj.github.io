@@ -8,6 +8,10 @@
   --line: #d9e2df;
   --primary: #126c5a;
   --primary-dark: #0b4f43;
+  --exact: #0b5c3d;
+  --exact-soft: #eaf6ef;
+  --outcome: #dff4e7;
+  --outcome-line: #95d4aa;
   --blue: #285f9f;
   --red: #c33e4b;
   --gold: #d7a629;
@@ -718,6 +722,71 @@ input::placeholder {
   background: #f5f9ff;
 }
 
+.fixture-row.prediction-exact,
+.match-pick-card.prediction-exact,
+.report-match-card.prediction-exact,
+.score-board.prediction-exact {
+  border-color: var(--exact);
+  background: var(--exact);
+  color: #ffffff;
+}
+
+.fixture-row.prediction-outcome,
+.match-pick-card.prediction-outcome,
+.report-match-card.prediction-outcome,
+.score-board.prediction-outcome {
+  border-color: var(--outcome-line);
+  background: var(--outcome);
+}
+
+.fixture-row.prediction-exact .fixture-meta,
+.fixture-row.prediction-exact .fixture-bottom,
+.fixture-row.prediction-exact .fixture-bottom strong,
+.match-pick-card.prediction-exact .match-pick-heading span,
+.score-board.prediction-exact .prediction-team span,
+.score-board.prediction-exact .prediction-team em,
+.report-match-card.prediction-exact .report-match-title span,
+.report-match-card.prediction-exact .report-match-time,
+.report-match-card.prediction-exact .report-score-block span,
+.report-match-card.prediction-exact .report-score-block em {
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.fixture-row.prediction-exact .versus,
+.score-board.prediction-exact .score-entry span,
+.report-match-card.prediction-exact .report-score-block strong {
+  color: #ffffff;
+}
+
+.score-board.prediction-exact,
+.score-board.prediction-outcome {
+  padding: 10px;
+  border: 1px solid;
+  border-radius: var(--radius);
+}
+
+.prediction-exact .score-entry,
+.prediction-exact .report-score-block {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.prediction-exact .score-input {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.prediction-exact .flag-frame {
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
+.prediction-outcome .score-entry,
+.prediction-outcome .report-score-block {
+  border-color: #b8dfc5;
+  background: rgba(255, 255, 255, 0.58);
+}
+
 .rank-card,
 .progress-card {
   width: 100%;
@@ -739,6 +808,16 @@ input::placeholder {
 .ai-card {
   border-color: rgba(215, 166, 41, 0.58);
   background: #fffaf0;
+}
+
+.ai-card.prediction-exact {
+  border-color: var(--exact);
+  background: var(--exact);
+}
+
+.ai-card.prediction-outcome {
+  border-color: var(--outcome-line);
+  background: var(--outcome);
 }
 
 .match-pick-heading {
@@ -887,6 +966,10 @@ input::placeholder {
   gap: 10px;
 }
 
+.compact-report-list {
+  gap: 6px;
+}
+
 .report-group {
   display: grid;
   gap: 10px;
@@ -918,8 +1001,10 @@ input::placeholder {
 
 .report-match-card {
   display: grid;
-  gap: 12px;
-  padding: 14px;
+  grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #ffffff;
@@ -929,19 +1014,19 @@ input::placeholder {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
 .report-match-title {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
 .report-match-title span,
 .report-match-time {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 850;
 }
 
@@ -954,6 +1039,7 @@ input::placeholder {
 
 .report-match-title strong {
   white-space: nowrap;
+  font-size: 0.92rem;
   font-weight: 950;
 }
 
@@ -967,13 +1053,13 @@ input::placeholder {
 .report-score-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
 
 .report-score-block {
   min-width: 0;
-  min-height: 76px;
-  padding: 10px;
+  min-height: 50px;
+  padding: 7px 8px;
   border: 1px solid #ecf0ee;
   border-radius: var(--radius);
   background: var(--surface-soft);
@@ -991,20 +1077,20 @@ input::placeholder {
 
 .report-score-block span {
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 850;
 }
 
 .report-score-block strong {
-  margin-top: 6px;
-  font-size: 1.25rem;
+  margin-top: 3px;
+  font-size: 1rem;
   font-weight: 950;
 }
 
 .report-score-block em {
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--primary-dark);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-style: normal;
   font-weight: 850;
 }
@@ -1243,7 +1329,7 @@ input::placeholder {
     grid-template-columns: 1fr;
   }
 
-  .report-score-grid {
+  .report-match-card {
     grid-template-columns: 1fr;
   }
 }
@@ -1274,6 +1360,10 @@ input::placeholder {
   }
 
   .report-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .report-score-grid {
     grid-template-columns: 1fr;
   }
 
