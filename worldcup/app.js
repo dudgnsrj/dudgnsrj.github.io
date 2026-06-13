@@ -625,8 +625,8 @@ function renderSchedule() {
     row.append(
       h("div", { className: "fixture-meta" }, [
         h("span", { text: `Match ${match.no}` }),
-        h("span", { text: formatDate(match.date) }),
-        h("span", { text: match.time }),
+        h("span", { text: formatKoreaDate(match) }),
+        h("span", { text: formatKoreaTime(match) }),
       ]),
       h("div", { className: "fixture-teams" }, [
         fixtureTeam(match.home),
@@ -655,7 +655,7 @@ function renderPredictionPanel() {
   const panel = h("div", { className: "prediction-inner" });
   const header = h("div", { className: "prediction-match-meta" }, [
     h("span", { text: `Match ${match.no}` }),
-    h("span", { text: `${formatDate(match.date)} · ${match.time}` }),
+    h("span", { text: `${formatKoreaDate(match)} · ${formatKoreaTime(match)}` }),
     h("span", { text: `${match.venue}, ${match.city}` }),
   ]);
 
@@ -725,7 +725,7 @@ function renderResultPanel() {
   const panel = h("div", { className: "prediction-inner" });
   const header = h("div", { className: "prediction-match-meta" }, [
     h("span", { text: `Match ${match.no}` }),
-    h("span", { text: `${formatDate(match.date)} · ${match.time}` }),
+    h("span", { text: `${formatKoreaDate(match)} · ${formatKoreaTime(match)}` }),
     h("span", { text: `${match.venue}, ${match.city}` }),
   ]);
 
@@ -1178,14 +1178,38 @@ function emptyState(title, body) {
   ]);
 }
 
-function formatDate(value) {
-  const [year, month, day] = value.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
+function formatKoreaDate(match) {
+  const date = koreaDateFromMatch(match);
   return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
     month: "short",
     day: "numeric",
     weekday: "short",
   }).format(date);
+}
+
+function formatKoreaTime(match) {
+  return `${new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(koreaDateFromMatch(match))} KST`;
+}
+
+function koreaDateFromMatch(match) {
+  const [year, month, day] = match.date.split("-").map(Number);
+  const parsed = match.time.match(/^(\d{1,2}):(\d{2})\s*([ap])\.m\.\s*UTC([+-]\d+)$/i);
+  if (!parsed) return new Date(year, month - 1, day);
+
+  let hour = Number(parsed[1]);
+  const minute = Number(parsed[2]);
+  const meridiem = parsed[3].toLowerCase();
+  const offsetHours = Number(parsed[4]);
+  if (meridiem === "p" && hour !== 12) hour += 12;
+  if (meridiem === "a" && hour === 12) hour = 0;
+
+  return new Date(Date.UTC(year, month - 1, day, hour - offsetHours, minute));
 }
 
 function flashSaved(text) {
