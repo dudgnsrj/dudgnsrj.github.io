@@ -631,7 +631,7 @@ function renderSchedule() {
     const result = getResult(match.id);
     const selected = match.id === state.selectedMatchId;
     const row = h("button", {
-      className: `fixture-row${selected ? " active" : ""}`,
+      className: `fixture-row${selected ? " active" : ""}${predictionResultClass(pick, result)}`,
       type: "button",
       "aria-pressed": String(selected),
     });
@@ -661,6 +661,7 @@ function renderPredictionPanel() {
   const participant = currentParticipant();
   const match = currentMatch();
   const pick = getPrediction(participant?.id, match.id);
+  const result = getResult(match.id);
   const home = getTeam(match.home);
   const away = getTeam(match.away);
   const locked = participantIsAi(participant?.id);
@@ -695,7 +696,7 @@ function renderPredictionPanel() {
   homeInput.addEventListener("input", saveCurrentPrediction);
   awayInput.addEventListener("input", saveCurrentPrediction);
 
-  const scoreBoard = h("div", { className: "score-board" }, [
+  const scoreBoard = h("div", { className: `score-board${predictionResultClass(pick, result)}` }, [
     predictionTeam(match.home, "home"),
     h("div", { className: "score-entry" }, [
       homeInput,
@@ -801,7 +802,7 @@ function renderMatchPredictionsPanel() {
     const score = scorePrediction(pick, result);
     const isCurrent = participant.id === state.selectedParticipantId;
     const card = h("article", {
-      className: `match-pick-card${isCurrent ? " current" : ""}${participantIsAi(participant.id) ? " ai-card" : ""}`,
+      className: `match-pick-card${isCurrent ? " current" : ""}${participantIsAi(participant.id) ? " ai-card" : ""}${predictionResultClass(pick, result)}`,
     });
 
     card.append(
@@ -809,7 +810,7 @@ function renderMatchPredictionsPanel() {
         h("strong", { text: participant.name }),
         h("span", { text: matchPickStatusText(pick, result, score) }),
       ]),
-      readOnlyScoreBoard(match, pick),
+      readOnlyScoreBoard(match, pick, result),
     );
     list.append(card);
   });
@@ -889,25 +890,23 @@ function renderParticipantReport() {
   );
 
   els.participantReportList.replaceChildren();
-  GROUPS.forEach((group) => {
-    const groupSection = h("section", { className: "report-group" });
-    groupSection.append(
-      h("div", { className: "report-group-heading" }, [
-        h("strong", { text: `${group.id}조` }),
-        h("span", { text: `${countGroupPredictions(group.id, participant.id)}/6 예측` }),
-      ]),
-    );
+  const completedMatches = MATCHES
+    .filter((match) => hasScore(getResult(match.id)))
+    .sort((a, b) => koreaDateFromMatch(a) - koreaDateFromMatch(b) || a.no - b.no);
 
-    const matches = h("div", { className: "report-match-list" });
-    matchesForGroup(group.id).forEach((match) => {
-      const pick = getPrediction(participant.id, match.id);
-      const result = getResult(match.id);
-      const scored = scorePrediction(pick, result);
-      matches.append(participantReportMatch(match, pick, result, scored));
-    });
-    groupSection.append(matches);
-    els.participantReportList.append(groupSection);
+  if (!completedMatches.length) {
+    els.participantReportList.append(emptyState("완료된 경기가 없습니다.", "실제 결과가 입력되면 이곳에 예측 리포트가 표시됩니다."));
+    return;
+  }
+
+  const matches = h("div", { className: "report-match-list compact-report-list" });
+  completedMatches.forEach((match) => {
+    const pick = getPrediction(participant.id, match.id);
+    const result = getResult(match.id);
+    const scored = scorePrediction(pick, result);
+    matches.append(participantReportMatch(match, pick, result, scored));
   });
+  els.participantReportList.append(matches);
 }
 
 function participantReportMatch(match, pick, result, scored) {
@@ -917,10 +916,10 @@ function participantReportMatch(match, pick, result, scored) {
     ? matchPickStatusText(pick, result, scored)
     : "결과 전";
 
-  return h("article", { className: "report-match-card" }, [
+  return h("article", { className: `report-match-card${predictionResultClass(pick, result)}` }, [
     h("div", { className: "report-match-head" }, [
       h("div", { className: "report-match-title" }, [
-        h("span", { text: `Match ${match.no}` }),
+        h("span", { text: `${match.group}조 · Match ${match.no}` }),
         h("strong", { text: `${home.ko} vs ${away.ko}` }),
       ]),
       h("span", { className: "report-match-time", text: `${formatKoreaDate(match)} · ${formatKoreaTime(match)}` }),
@@ -1125,6 +1124,14 @@ function fixtureStatusText(pick, result) {
   return `${pickText} · ${resultText}`;
 }
 
+function predictionResultClass(pick, result) {
+  if (!hasScore(result) || !hasScore(pick)) return "";
+  const scored = scorePrediction(pick, result);
+  if (scored.exact) return " prediction-exact";
+  if (scored.outcome) return " prediction-outcome";
+  return "";
+}
+
 function openParticipantReport(participantId) {
   activeReportParticipantId = participantId;
   render();
@@ -1164,9 +1171,9 @@ function matchPickStatusText(pick, result, score) {
   return "0점";
 }
 
-function readOnlyScoreBoard(match, score) {
+function readOnlyScoreBoard(match, score, result) {
   const hasPick = hasScore(score);
-  return h("div", { className: "score-board compact-score-board readonly-score-board" }, [
+  return h("div", { className: `score-board compact-score-board readonly-score-board${predictionResultClass(score, result)}` }, [
     predictionTeam(match.home, "home"),
     h("div", { className: "score-entry readonly-score" }, [
       h("strong", { text: hasPick ? score.home : "-" }),
