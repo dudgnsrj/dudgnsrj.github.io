@@ -165,6 +165,12 @@ const AI_PREDICTIONS = buildAiPredictions();
 const els = {
   workspace: document.querySelector("#workspace"),
   startPanel: document.querySelector("#startPanel"),
+  participantReportPage: document.querySelector("#participantReportPage"),
+  participantReportTitle: document.querySelector("#participantReportTitle"),
+  participantReportSummary: document.querySelector("#participantReportSummary"),
+  participantReportList: document.querySelector("#participantReportList"),
+  closeReportBtn: document.querySelector("#closeReportBtn"),
+  participantStrip: document.querySelector(".participant-strip"),
   groupsGrid: document.querySelector("#groupsGrid"),
   selectedGroupEyebrow: document.querySelector("#selectedGroupEyebrow"),
   selectedGroupTitle: document.querySelector("#selectedGroupTitle"),
@@ -194,6 +200,7 @@ const els = {
 let state = loadState();
 let serverOnline = false;
 let lastSyncAt = null;
+let activeReportParticipantId = "";
 normaliseState();
 render();
 syncFromServer();
@@ -524,9 +531,15 @@ function render() {
   renderStats();
   renderLeaderboard();
   renderParticipantProgress();
+  if (activeReportParticipantId && !participantById(activeReportParticipantId)) {
+    activeReportParticipantId = "";
+  }
+  const hasActiveReport = Boolean(activeReportParticipantId);
   const hasSelectedParticipant = Boolean(currentParticipant());
-  renderEntryState(hasSelectedParticipant);
-  if (hasSelectedParticipant) {
+  renderEntryState(hasSelectedParticipant, hasActiveReport);
+  if (hasActiveReport) {
+    renderParticipantReport();
+  } else if (hasSelectedParticipant) {
     renderGroups();
     renderSelectedGroup();
     renderSchedule();
@@ -564,9 +577,11 @@ function renderParticipantSelect() {
   els.participantSelect.value = selected;
 }
 
-function renderEntryState(hasSelectedParticipant) {
-  els.startPanel.hidden = hasSelectedParticipant;
-  els.workspace.hidden = !hasSelectedParticipant;
+function renderEntryState(hasSelectedParticipant, hasActiveReport) {
+  els.participantStrip.hidden = hasActiveReport;
+  els.participantReportPage.hidden = !hasActiveReport;
+  els.startPanel.hidden = hasActiveReport || hasSelectedParticipant;
+  els.workspace.hidden = hasActiveReport || !hasSelectedParticipant;
 }
 
 function renderStats() {
@@ -811,7 +826,11 @@ function renderLeaderboard() {
   }
 
   rows.forEach((row, index) => {
-    const rankCard = h("article", { className: `rank-card${index === 0 ? " top" : ""}${participantIsAi(row.id) ? " ai-card" : ""}` }, [
+    const rankCard = h("button", {
+      className: `rank-card${index === 0 ? " top" : ""}${participantIsAi(row.id) ? " ai-card" : ""}`,
+      type: "button",
+      title: `${row.name} 예측 리포트 보기`,
+    }, [
       h("div", { className: "rank-number", text: index + 1 }),
       h("div", { className: "rank-main" }, [
         h("strong", { text: row.name }),
@@ -822,6 +841,7 @@ function renderLeaderboard() {
         h("span", { text: `정확 ${row.exact} · 승무패 ${row.outcome}` }),
       ]),
     ]);
+    rankCard.addEventListener("click", () => openParticipantReport(row.id));
     els.rankingList.append(rankCard);
   });
 }
@@ -837,7 +857,11 @@ function renderParticipantProgress() {
     const picked = countPredictions(participant.id);
     const rank = getLeaderboard().find((entry) => entry.id === participant.id);
     const percent = Math.round((picked / MATCHES.length) * 100);
-    const row = h("article", { className: `progress-card${participantIsAi(participant.id) ? " ai-card" : ""}` }, [
+    const row = h("button", {
+      className: `progress-card${participantIsAi(participant.id) ? " ai-card" : ""}`,
+      type: "button",
+      title: `${participant.name} 예측 리포트 보기`,
+    }, [
       h("div", { className: "progress-card-top" }, [
         h("strong", { text: participant.name }),
         h("span", { text: `${rank?.points || 0}점` }),
@@ -847,8 +871,66 @@ function renderParticipantProgress() {
       ]),
       h("p", { text: `${picked}/${MATCHES.length} 예측 · ${percent}% 완료` }),
     ]);
+    row.addEventListener("click", () => openParticipantReport(participant.id));
     els.participantProgress.append(row);
   });
+}
+
+function renderParticipantReport() {
+  const participant = participantById(activeReportParticipantId);
+  if (!participant) return;
+  const summary = getLeaderboard().find((entry) => entry.id === participant.id);
+  els.participantReportTitle.textContent = `${participant.name} 예측 리포트`;
+  els.participantReportSummary.replaceChildren(
+    reportStat("총점", `${summary?.points || 0}점`),
+    reportStat("예측 완료", `${summary?.picked || 0}/${MATCHES.length}`),
+    reportStat("채점 경기", `${summary?.scoredMatches || 0}/${countResults()}`),
+    reportStat("정확/승무패", `${summary?.exact || 0}/${summary?.outcome || 0}`),
+  );
+
+  els.participantReportList.replaceChildren();
+  GROUPS.forEach((group) => {
+    const groupSection = h("section", { className: "report-group" });
+    groupSection.append(
+      h("div", { className: "report-group-heading" }, [
+        h("strong", { text: `${group.id}조` }),
+        h("span", { text: `${countGroupPredictions(group.id, participant.id)}/6 예측` }),
+      ]),
+    );
+
+    const matches = h("div", { className: "report-match-list" });
+    matchesForGroup(group.id).forEach((match) => {
+      const pick = getPrediction(participant.id, match.id);
+      const result = getResult(match.id);
+      const scored = scorePrediction(pick, result);
+      matches.append(participantReportMatch(match, pick, result, scored));
+    });
+    groupSection.append(matches);
+    els.participantReportList.append(groupSection);
+  });
+}
+
+function participantReportMatch(match, pick, result, scored) {
+  const home = getTeam(match.home);
+  const away = getTeam(match.away);
+  const scoreText = hasScore(result)
+    ? matchPickStatusText(pick, result, scored)
+    : "결과 전";
+
+  return h("article", { className: "report-match-card" }, [
+    h("div", { className: "report-match-head" }, [
+      h("div", { className: "report-match-title" }, [
+        h("span", { text: `Match ${match.no}` }),
+        h("strong", { text: `${home.ko} vs ${away.ko}` }),
+      ]),
+      h("span", { className: "report-match-time", text: `${formatKoreaDate(match)} · ${formatKoreaTime(match)}` }),
+    ]),
+    h("div", { className: "report-score-grid" }, [
+      reportScoreBlock("예측", formatScore(pick, "예측 전")),
+      reportScoreBlock("결과", formatScore(result, "결과 전")),
+      reportScoreBlock("점수", hasScore(result) && hasScore(pick) ? `${scored.points}점` : "-", scoreText),
+    ]),
+  ]);
 }
 
 function selectGroup(groupId) {
@@ -904,6 +986,10 @@ function currentMatch() {
 
 function currentParticipant() {
   return state.participants.find((participant) => participant.id === state.selectedParticipantId) || null;
+}
+
+function participantById(participantId) {
+  return state.participants.find((participant) => participant.id === participantId) || null;
 }
 
 function participantIsAi(participantId) {
@@ -1037,6 +1123,37 @@ function fixtureStatusText(pick, result) {
   const pickText = hasScore(pick) ? `예측 ${pick.home}-${pick.away}` : "예측 전";
   const resultText = hasScore(result) ? `결과 ${result.home}-${result.away}` : "결과 전";
   return `${pickText} · ${resultText}`;
+}
+
+function openParticipantReport(participantId) {
+  activeReportParticipantId = participantId;
+  render();
+  els.participantReportPage.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function closeParticipantReport() {
+  activeReportParticipantId = "";
+  render();
+}
+
+function reportStat(label, value) {
+  return h("article", { className: "report-stat" }, [
+    h("span", { text: label }),
+    h("strong", { text: value }),
+  ]);
+}
+
+function reportScoreBlock(label, value, note = "") {
+  const children = [
+    h("span", { text: label }),
+    h("strong", { text: value }),
+  ];
+  if (note) children.push(h("em", { text: note }));
+  return h("div", { className: "report-score-block" }, children);
+}
+
+function formatScore(score, emptyText) {
+  return hasScore(score) ? `${score.home}-${score.away}` : emptyText;
 }
 
 function matchPickStatusText(pick, result, score) {
@@ -1368,6 +1485,7 @@ els.participantSelect.addEventListener("change", () => {
 });
 
 els.removeParticipantBtn.addEventListener("click", removeCurrentParticipant);
+els.closeReportBtn.addEventListener("click", closeParticipantReport);
 els.exportBtn.addEventListener("click", exportState);
 els.importInput.addEventListener("change", (event) => importState(event.target.files[0]));
 els.resetBtn.addEventListener("click", resetState);
