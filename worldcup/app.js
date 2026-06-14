@@ -199,7 +199,6 @@ const els = {
   pickedStat: document.querySelector("#pickedStat"),
   resultStat: document.querySelector("#resultStat"),
   rankingList: document.querySelector("#rankingList"),
-  participantProgress: document.querySelector("#participantProgress"),
   exportBtn: document.querySelector("#exportBtn"),
   importInput: document.querySelector("#importInput"),
   resetBtn: document.querySelector("#resetBtn"),
@@ -539,7 +538,6 @@ function render() {
   renderParticipantSelect();
   renderStats();
   renderLeaderboard();
-  renderParticipantProgress();
   if (activeReportParticipantId && !participantById(activeReportParticipantId)) {
     activeReportParticipantId = "";
   }
@@ -548,14 +546,16 @@ function render() {
   }
   const hasActiveParticipantReport = Boolean(activeReportParticipantId);
   const hasSelectedParticipant = Boolean(currentParticipant());
-  const implicitMatchReportId = hasSelectedParticipant || hasActiveParticipantReport ? "" : nextMatchByTime()?.id;
-  const matchReportId = activeMatchReportId || implicitMatchReportId;
+  const shouldShowNextMatches = !hasSelectedParticipant && !hasActiveParticipantReport && !activeMatchReportId;
+  const matchReportId = activeMatchReportId;
   const hasActiveMatchReport = Boolean(matchReportId);
-  renderEntryState(hasSelectedParticipant, hasActiveParticipantReport, hasActiveMatchReport);
+  renderEntryState(hasSelectedParticipant, hasActiveParticipantReport, hasActiveMatchReport || shouldShowNextMatches);
   if (hasActiveParticipantReport) {
     renderParticipantReport();
   } else if (hasActiveMatchReport) {
-    renderMatchReport(matchReportId, !activeMatchReportId);
+    renderMatchReport(matchReportId);
+  } else if (shouldShowNextMatches) {
+    renderNextMatchesPage();
   } else if (hasSelectedParticipant) {
     renderGroups();
     renderSelectedGroup();
@@ -734,7 +734,6 @@ function renderResultPanel() {
     renderSchedule();
     renderMatchPredictionsPanel();
     renderLeaderboard();
-    renderParticipantProgress();
   };
 
   homeInput.addEventListener("input", saveCurrentResult);
@@ -819,45 +818,15 @@ function renderLeaderboard() {
       h("div", { className: "rank-number", text: index + 1 }),
       h("div", { className: "rank-main" }, [
         h("strong", { text: row.name }),
-        h("span", { text: `${row.picked}/${MATCHES.length} 예측 · ${row.scoredMatches}경기 채점` }),
       ]),
       h("div", { className: "rank-score" }, [
         h("strong", { text: `${row.points}점` }),
-        h("span", { text: `정확 ${row.exact} · 승무패 ${row.outcome}` }),
+        h("span", { text: `스코어 ${formatAccuracy(row.exact, row.scoredMatches)}` }),
+        h("span", { text: `승무패 ${formatAccuracy(row.outcome, row.scoredMatches)}` }),
       ]),
     ]);
     rankCard.addEventListener("click", () => openParticipantReport(row.id));
     els.rankingList.append(rankCard);
-  });
-}
-
-function renderParticipantProgress() {
-  els.participantProgress.replaceChildren();
-  if (!state.participants.length) {
-    els.participantProgress.append(emptyState("참가자가 없습니다.", "친구 이름을 추가하면 예측 현황이 표시됩니다."));
-    return;
-  }
-
-  state.participants.forEach((participant) => {
-    const picked = countPredictions(participant.id);
-    const rank = getLeaderboard().find((entry) => entry.id === participant.id);
-    const percent = Math.round((picked / MATCHES.length) * 100);
-    const row = h("button", {
-      className: `progress-card${participantIsAi(participant.id) ? " ai-card" : ""}`,
-      type: "button",
-      title: `${participant.name} 예측 리포트 보기`,
-    }, [
-      h("div", { className: "progress-card-top" }, [
-        h("strong", { text: participant.name }),
-        h("span", { text: `${rank?.points || 0}점` }),
-      ]),
-      h("div", { className: "progress-track" }, [
-        h("span", { className: "progress-fill", style: `width: ${percent}%` }),
-      ]),
-      h("p", { text: `${picked}/${MATCHES.length} 예측 · ${percent}% 완료` }),
-    ]);
-    row.addEventListener("click", () => openParticipantReport(participant.id));
-    els.participantProgress.append(row);
   });
 }
 
@@ -893,7 +862,61 @@ function renderParticipantReport() {
   els.participantReportList.append(matches);
 }
 
-function renderMatchReport(matchId, isImplicitHome = false) {
+function renderNextMatchesPage() {
+  const matches = nextDateMatches();
+  const firstMatch = matches[0];
+  els.matchReportEyebrow.textContent = "Next Matches";
+  els.matchReportTitle.textContent = firstMatch ? `${formatKoreaDate(firstMatch)} 경기` : "다음 경기";
+  els.closeMatchReportBtn.hidden = true;
+  els.editMatchPredictionBtn.hidden = true;
+
+  if (!matches.length) {
+    els.matchReportSummary.replaceChildren(emptyState("남은 경기가 없습니다.", "모든 조별예선 결과가 입력되었습니다."));
+    els.matchReportPredictions.replaceChildren();
+    return;
+  }
+
+  const list = h("div", { className: "next-match-list" });
+  matches.forEach((match) => list.append(nextMatchCard(match)));
+
+  els.matchReportSummary.replaceChildren(
+    list,
+    h("div", { className: "match-report-stat-grid" }, [
+      reportStat("다음 경기일", formatKoreaDate(firstMatch)),
+      reportStat("경기 수", `${matches.length}경기`),
+      reportStat("결과 입력", `${countResults()}/${MATCHES.length}`),
+    ]),
+  );
+  els.matchReportPredictions.replaceChildren();
+}
+
+function nextMatchCard(match) {
+  const home = getTeam(match.home);
+  const away = getTeam(match.away);
+  const card = h("button", {
+    className: "next-match-card",
+    type: "button",
+    title: `${home.ko} vs ${away.ko} 경기 예측 현황 보기`,
+  }, [
+    h("div", { className: "fixture-meta" }, [
+      h("span", { text: `${match.group}조 · Match ${match.no}` }),
+      h("span", { text: formatKoreaTime(match) }),
+    ]),
+    h("div", { className: "fixture-teams" }, [
+      fixtureTeam(match.home),
+      h("span", { className: "versus", text: "vs" }),
+      fixtureTeam(match.away),
+    ]),
+    h("div", { className: "fixture-bottom" }, [
+      h("span", { text: `${match.venue}, ${match.city}` }),
+      h("strong", { text: "경기 보기" }),
+    ]),
+  ]);
+  card.addEventListener("click", () => openMatchReport(match.id));
+  return card;
+}
+
+function renderMatchReport(matchId) {
   const match = matchById(matchId) || nextMatchByTime() || MATCHES[0];
   const home = getTeam(match.home);
   const away = getTeam(match.away);
@@ -902,9 +925,9 @@ function renderMatchReport(matchId, isImplicitHome = false) {
   const scored = matchScoreSummary(match);
   const hasSelectedParticipant = Boolean(currentParticipant());
 
-  els.matchReportEyebrow.textContent = isImplicitHome ? "Next Match" : `Group ${match.group} · Match ${match.no}`;
+  els.matchReportEyebrow.textContent = `Group ${match.group} · Match ${match.no}`;
   els.matchReportTitle.textContent = `${home.ko} vs ${away.ko}`;
-  els.closeMatchReportBtn.hidden = isImplicitHome;
+  els.closeMatchReportBtn.hidden = false;
   els.editMatchPredictionBtn.hidden = PREDICTIONS_LOCKED || !hasSelectedParticipant;
   els.editMatchPredictionBtn.disabled = PREDICTIONS_LOCKED || participantIsAi(state.selectedParticipantId);
   els.editMatchPredictionBtn.textContent = PREDICTIONS_LOCKED
@@ -1045,6 +1068,26 @@ function nextMatchByTime(now = new Date()) {
     || sorted[sorted.length - 1]
     || null
   );
+}
+
+function nextDateMatches(now = new Date()) {
+  const anchor = nextMatchByTime(now);
+  if (!anchor) return [];
+  const targetDate = koreaDateKey(anchor);
+  return [...MATCHES]
+    .filter((match) => !hasScore(getResult(match.id)) && koreaDateKey(match) === targetDate)
+    .sort((a, b) => koreaDateFromMatch(a) - koreaDateFromMatch(b) || a.no - b.no);
+}
+
+function koreaDateKey(match) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(koreaDateFromMatch(match));
+  const get = (type) => parts.find((part) => part.type === type)?.value || "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
 function getTeam(code) {
@@ -1292,6 +1335,11 @@ function matchScoreSummary(match) {
     },
     { exact: 0, outcomeOnly: 0 },
   );
+}
+
+function formatAccuracy(count, total) {
+  const percent = total ? Math.round((count / total) * 100) : 0;
+  return `${percent}% (${count}/${total})`;
 }
 
 function buildAiPredictions() {

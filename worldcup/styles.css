@@ -524,7 +524,8 @@ input::placeholder {
   border-style: dashed;
 }
 
-.fixture-row {
+.fixture-row,
+.next-match-card {
   display: grid;
   gap: 10px;
   width: 100%;
@@ -540,7 +541,8 @@ input::placeholder {
     transform 140ms ease;
 }
 
-.fixture-row:hover {
+.fixture-row:hover,
+.next-match-card:hover {
   transform: translateY(-1px);
   border-color: #a8bbb5;
 }
@@ -1017,6 +1019,11 @@ input::placeholder {
   margin-bottom: 0;
 }
 
+.next-match-list {
+  display: grid;
+  gap: 8px;
+}
+
 .report-stat {
   min-width: 0;
   min-height: 86px;
@@ -1203,7 +1210,7 @@ button.report-match-card:hover {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  min-height: 92px;
+  min-height: 104px;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1260,6 +1267,8 @@ button.report-match-card:hover {
 
 .rank-score {
   text-align: right;
+  display: grid;
+  gap: 2px;
 }
 
 .rank-score strong {
