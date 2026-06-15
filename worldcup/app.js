@@ -168,7 +168,6 @@ const AI_PREDICTIONS = buildAiPredictions();
 const els = {
   viewTabs: document.querySelectorAll(".view-tab"),
   rankingSection: document.querySelector(".ranking-section"),
-  statsBand: document.querySelector(".stats-band"),
   workspace: document.querySelector("#workspace"),
   startPanel: document.querySelector("#startPanel"),
   participantReportPage: document.querySelector("#participantReportPage"),
@@ -200,14 +199,12 @@ const els = {
   matchPicksCard: document.querySelector(".match-picks-card"),
   saveStatus: document.querySelector("#saveStatus"),
   resultSaveStatus: document.querySelector("#resultSaveStatus"),
+  participantButtons: document.querySelector("#participantButtons"),
   participantForm: document.querySelector("#participantForm"),
   participantName: document.querySelector("#participantName"),
-  participantSelect: document.querySelector("#participantSelect"),
   removeParticipantBtn: document.querySelector("#removeParticipantBtn"),
   adminActions: document.querySelector("#adminActions"),
   resultCard: document.querySelector("#resultCard"),
-  pickedStat: document.querySelector("#pickedStat"),
-  resultStat: document.querySelector("#resultStat"),
   rankingList: document.querySelector("#rankingList"),
   exportBtn: document.querySelector("#exportBtn"),
   importInput: document.querySelector("#importInput"),
@@ -548,7 +545,6 @@ function render() {
   normaliseState();
   renderMode();
   renderParticipantSelect();
-  renderStats();
   renderLeaderboard();
   renderViewTabs();
   if (activeReportParticipantId && !participantById(activeReportParticipantId)) {
@@ -567,7 +563,6 @@ function render() {
     renderMatchReport(activeMatchReportId);
   } else if (activeView === "leaderboard") {
     els.rankingSection.hidden = false;
-    els.statsBand.hidden = false;
   } else if (activeView === "personal") {
     els.participantStrip.hidden = false;
     ensurePersonalReportParticipant();
@@ -609,22 +604,31 @@ function renderMode() {
 
 function renderParticipantSelect() {
   const selected = state.selectedParticipantId;
-  els.participantSelect.replaceChildren();
+  els.participantButtons.replaceChildren();
 
   if (!state.participants.length) {
-    els.participantSelect.append(optionNode("", "참가자 없음"));
-    els.participantSelect.disabled = true;
+    els.participantButtons.append(h("p", { className: "participant-empty", text: "참가자 없음" }));
     els.removeParticipantBtn.disabled = true;
     return;
   }
 
-  els.participantSelect.disabled = false;
+  const summaries = new Map(getLeaderboard().map((participant) => [participant.id, participant]));
   els.removeParticipantBtn.disabled = !IS_ADMIN || !selected || participantIsAi(selected);
-  els.participantSelect.append(optionNode("", "참가자 선택"));
   state.participants.forEach((participant) => {
-    els.participantSelect.append(optionNode(participant.id, participant.name));
+    const summary = summaries.get(participant.id);
+    const isSelected = participant.id === selected;
+    const button = h("button", {
+      className: `participant-button${isSelected ? " active" : ""}${participantIsAi(participant.id) ? " ai-card" : ""}`,
+      type: "button",
+      "aria-pressed": String(isSelected),
+      title: `${participant.name} 예측 리포트 보기`,
+    }, [
+      h("strong", { text: participant.name }),
+      h("span", { text: `${summary?.points || 0}점` }),
+    ]);
+    button.addEventListener("click", () => selectParticipant(participant.id));
+    els.participantButtons.append(button);
   });
-  els.participantSelect.value = selected;
 }
 
 function setActiveView(viewId) {
@@ -657,7 +661,6 @@ function renderViewTabs() {
 
 function hideViewPanels() {
   els.rankingSection.hidden = true;
-  els.statsBand.hidden = true;
   els.participantStrip.hidden = true;
   els.participantReportPage.hidden = true;
   els.matchReportPage.hidden = true;
@@ -669,13 +672,6 @@ function hideViewPanels() {
   els.closeReportBtn.hidden = false;
   els.predictionCard.hidden = false;
   els.matchPicksCard.hidden = false;
-}
-
-function renderStats() {
-  const picked = countPredictions(state.selectedParticipantId);
-  const results = countResults();
-  els.pickedStat.textContent = `${picked}/${MATCHES.length}`;
-  els.resultStat.textContent = `${results}/${MATCHES.length}`;
 }
 
 function renderGroups() {
@@ -800,7 +796,6 @@ function renderResultPanel() {
     const score = normaliseScore(homeInput.value, awayInput.value);
     setResult(match.id, score);
     flashResultSaved(hasScore(score) ? "저장됨" : "비어 있음");
-    renderStats();
     renderSchedule();
     renderMatchPredictionsPanel();
     renderLeaderboard();
@@ -858,15 +853,19 @@ function matchPickCard(match, participant) {
   const score = scorePrediction(pick, result);
   const isCurrent = participant.id === state.selectedParticipantId;
   const card = h("article", {
-    className: `match-pick-card${isCurrent ? " current" : ""}${participantIsAi(participant.id) ? " ai-card" : ""}${predictionResultClass(pick, result)}`,
+    className: `match-pick-card compact-pick-card${isCurrent ? " current" : ""}${participantIsAi(participant.id) ? " ai-card" : ""}${predictionResultClass(pick, result)}`,
   });
 
   card.append(
-    h("div", { className: "match-pick-heading" }, [
+    h("div", { className: "compact-pick-main" }, [
       h("strong", { text: participant.name }),
       h("span", { text: matchPickStatusText(pick, result, score) }),
     ]),
-    readOnlyScoreBoard(match, pick, result),
+    h("div", { className: "compact-pick-score" }, [
+      h("span", { text: getTeam(match.home).ko }),
+      h("strong", { text: formatScore(pick, "-") }),
+      h("span", { text: getTeam(match.away).ko }),
+    ]),
   );
   return card;
 }
@@ -907,9 +906,8 @@ function renderParticipantReport() {
   els.participantReportTitle.textContent = `${participant.name} 예측 리포트`;
   els.participantReportSummary.replaceChildren(
     reportStat("총점", `${summary?.points || 0}점`),
-    reportStat("예측 완료", `${summary?.picked || 0}/${MATCHES.length}`),
-    reportStat("채점 경기", `${summary?.scoredMatches || 0}/${countResults()}`),
-    reportStat("정확/승무패", `${summary?.exact || 0}/${summary?.outcome || 0}`),
+    reportStat("스코어", formatAccuracy(summary?.exact || 0, summary?.scoredMatches || 0)),
+    reportStat("승무패", formatAccuracy(summary?.outcome || 0, summary?.scoredMatches || 0)),
   );
 
   els.participantReportList.replaceChildren();
@@ -922,7 +920,7 @@ function renderParticipantReport() {
     return;
   }
 
-  const matches = h("div", { className: "report-match-list compact-report-list" });
+  const matches = h("div", { className: "compact-prediction-list" });
   completedMatches.forEach((match) => {
     const pick = getPrediction(participant.id, match.id);
     const result = getResult(match.id);
@@ -933,6 +931,7 @@ function renderParticipantReport() {
 }
 
 function renderNextMatchesPage() {
+  els.matchReportPage.classList.add("next-matches-page");
   const matches = nextDateMatches();
   const firstMatch = matches[0];
   els.matchReportEyebrow.textContent = "Next Matches";
@@ -949,14 +948,7 @@ function renderNextMatchesPage() {
   const list = h("div", { className: "next-match-list" });
   matches.forEach((match) => list.append(nextMatchCard(match)));
 
-  els.matchReportSummary.replaceChildren(
-    list,
-    h("div", { className: "match-report-stat-grid" }, [
-      reportStat("다음 경기일", formatKoreaDate(firstMatch)),
-      reportStat("경기 수", `${matches.length}경기`),
-      reportStat("결과 입력", `${countResults()}/${MATCHES.length}`),
-    ]),
-  );
+  els.matchReportSummary.replaceChildren(list);
   els.matchReportPredictions.replaceChildren();
 }
 
@@ -988,6 +980,7 @@ function nextMatchCard(match) {
 }
 
 function renderMatchReport(matchId) {
+  els.matchReportPage.classList.remove("next-matches-page");
   const match = matchById(matchId) || nextMatchByTime() || MATCHES[0];
   const home = getTeam(match.home);
   const away = getTeam(match.away);
@@ -1008,26 +1001,14 @@ function renderMatchReport(matchId) {
     : "내 예측 입력";
 
   els.matchReportSummary.replaceChildren(
-    h("article", { className: "match-report-main" }, [
-      h("div", { className: "match-report-meta" }, [
-        h("span", { text: `${match.group}조 · Match ${match.no}` }),
-        h("span", { text: `${formatKoreaDate(match)} · ${formatKoreaTime(match)}` }),
-        h("span", { text: `${match.venue}, ${match.city}` }),
-      ]),
-      matchTeamsBoard(match, result),
-    ]),
-    h("div", { className: "match-report-stat-grid" }, [
-      reportStat("예측 참여", `${pickedCount}/${state.participants.length}`),
-      reportStat("결과", formatScore(result, "결과 전")),
-      reportStat("정확/승무패", hasScore(result) ? `${scored.exact}/${scored.outcomeOnly}` : "-"),
-    ]),
+    compactMatchSummary(match, result, pickedCount, scored),
   );
 
   els.matchReportPredictions.replaceChildren(
     h("div", { className: "section-heading" }, [
       h("div", {}, [
         h("p", { className: "eyebrow", text: "Picks Board" }),
-        h("h2", { text: "모든 참가자 예측" }),
+        h("h2", { text: "예측 현황" }),
       ]),
       h("p", { className: "source-note", text: hasScore(result) ? "채점 완료" : "결과 입력 전" }),
     ]),
@@ -1043,21 +1024,18 @@ function participantReportMatch(match, pick, result, scored) {
     : "결과 전";
 
   const card = h("button", {
-    className: `report-match-card${predictionResultClass(pick, result)}`,
+    className: `compact-report-row${predictionResultClass(pick, result)}`,
     type: "button",
     title: `${home.ko} vs ${away.ko} 경기 예측 현황 보기`,
   }, [
-    h("div", { className: "report-match-head" }, [
-      h("div", { className: "report-match-title" }, [
-        h("span", { text: `${match.group}조 · Match ${match.no}` }),
-        h("strong", { text: `${home.ko} vs ${away.ko}` }),
-      ]),
-      h("span", { className: "report-match-time", text: `${formatKoreaDate(match)} · ${formatKoreaTime(match)}` }),
+    h("div", { className: "compact-row-main" }, [
+      h("span", { className: "compact-muted", text: `${match.group}조 · M${match.no} · ${formatKoreaDate(match)}` }),
+      h("strong", { text: `${home.ko} ${formatScore(result, "-")} ${away.ko}` }),
     ]),
-    h("div", { className: "report-score-grid" }, [
-      reportScoreBlock("예측", formatScore(pick, "예측 전")),
-      reportScoreBlock("결과", formatScore(result, "결과 전")),
-      reportScoreBlock("점수", hasScore(result) && hasScore(pick) ? `${scored.points}점` : "-", scoreText),
+    h("div", { className: "compact-row-score" }, [
+      h("span", { text: `예측 ${formatScore(pick, "-")}` }),
+      h("strong", { text: hasScore(result) && hasScore(pick) ? `${scored.points}점` : "-" }),
+      h("em", { text: scoreText }),
     ]),
   ]);
   card.addEventListener("click", () => openMatchReport(match.id));
@@ -1077,6 +1055,14 @@ function selectGroup(groupId) {
 
 function selectMatch(matchId) {
   openMatchReport(matchId);
+}
+
+function selectParticipant(participantId) {
+  const participant = participantById(participantId);
+  if (!participant) return;
+  state.selectedParticipantId = participant.id;
+  if (activeView === "personal") activeReportParticipantId = participant.id;
+  render();
 }
 
 function closeGroupPage() {
@@ -1425,6 +1411,37 @@ function matchTeamsBoard(match, result) {
   ]);
 }
 
+function compactMatchSummary(match, result, pickedCount, scored) {
+  const home = getTeam(match.home);
+  const away = getTeam(match.away);
+  return h("div", { className: "compact-match-summary" }, [
+    h("article", { className: "compact-match-card" }, [
+      h("span", { className: "compact-label", text: "경기 정보" }),
+      h("div", { className: "compact-matchup" }, [
+        compactTeamLabel(match.home),
+        h("strong", { text: "vs" }),
+        compactTeamLabel(match.away),
+      ]),
+      h("p", { text: `${match.group}조 · Match ${match.no} · ${formatKoreaDate(match)} ${formatKoreaTime(match)}` }),
+      h("p", { text: `${match.venue}, ${match.city}` }),
+    ]),
+    h("article", { className: "compact-match-card result-summary-card" }, [
+      h("span", { className: "compact-label", text: "결과" }),
+      h("div", { className: "compact-result-score", text: hasScore(result) ? `${result.home} : ${result.away}` : "경기 전" }),
+      h("p", { text: `${home.ko} vs ${away.ko}` }),
+      h("p", { text: hasScore(result) ? `예측 ${pickedCount}/${state.participants.length} · 정확 ${scored.exact} · 승무패 ${scored.outcomeOnly}` : `예측 ${pickedCount}/${state.participants.length}` }),
+    ]),
+  ]);
+}
+
+function compactTeamLabel(code) {
+  const team = getTeam(code);
+  return h("span", { className: "compact-team-label" }, [
+    flagNode(code),
+    h("span", { text: team.ko }),
+  ]);
+}
+
 function matchScoreSummary(match) {
   return state.participants.reduce(
     (acc, participant) => {
@@ -1753,14 +1770,6 @@ els.participantForm.addEventListener("submit", (event) => {
   addParticipant(els.participantName.value);
   els.participantName.value = "";
   els.participantName.focus();
-});
-
-els.participantSelect.addEventListener("change", () => {
-  state.selectedParticipantId = els.participantSelect.value;
-  if (activeView === "personal") {
-    activeReportParticipantId = state.selectedParticipantId;
-  }
-  render();
 });
 
 els.viewTabs.forEach((tab) => {

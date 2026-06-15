@@ -4,15 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>월드컵 승부의신</title>
-    <link rel="stylesheet" href="./styles.css?v=20260615-group-pages" />
+    <link rel="stylesheet" href="./styles.css?v=20260615-compact-live" />
   </head>
   <body>
     <div class="app-shell">
       <header class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">FIFA World Cup 26 Pick'em</p>
-          <h1>월드컵 승부의신</h1>
-          <p class="hero-subtitle">Canada · Mexico · USA 2026 / 조별예선 12개 그룹 · 72경기</p>
+          <div class="worldcup-logo" aria-label="FIFA World Cup 26 로고 마크">
+            <span class="logo-year">26</span>
+            <span class="logo-word">FIFA<br />WORLD CUP</span>
+          </div>
+          <div class="hero-title-block">
+            <p class="eyebrow">FIFA World Cup 26 Pick'em</p>
+            <h1>월드컵 승부의신</h1>
+            <p class="hero-subtitle">Canada · Mexico · USA 2026 / 조별예선 12개 그룹 · 72경기</p>
+          </div>
         </div>
         <div id="adminActions" class="hero-actions">
           <button id="exportBtn" class="ghost-button" type="button" title="예측 데이터 내보내기">
@@ -49,38 +55,12 @@
         <div id="rankingList" class="ranking-list"></div>
       </section>
 
-      <section class="stats-band" aria-label="대회 현황">
-        <article>
-          <strong>12</strong>
-          <span>그룹</span>
-        </article>
-        <article>
-          <strong>48</strong>
-          <span>국가</span>
-        </article>
-        <article>
-          <strong>72</strong>
-          <span>조별예선 경기</span>
-        </article>
-        <article>
-          <strong id="pickedStat">0/72</strong>
-          <span>현재 참가자 예측</span>
-        </article>
-        <article>
-          <strong id="resultStat">0/72</strong>
-          <span>결과 입력</span>
-        </article>
-      </section>
-
       <section class="participant-strip" aria-label="참가자 관리">
         <div class="participant-intro">
           <p class="eyebrow">Entry</p>
           <h2>참가자 선택</h2>
         </div>
-        <div class="participant-select-block">
-          <label for="participantSelect">예측 참가자</label>
-          <select id="participantSelect"></select>
-        </div>
+        <div id="participantButtons" class="participant-buttons" aria-label="참가자 선택"></div>
         <form id="participantForm" class="participant-form">
           <input id="participantName" type="text" placeholder="친구 이름 추가" autocomplete="off" />
           <button type="submit" class="primary-button">추가</button>
@@ -202,6 +182,6 @@
       </footer>
     </div>
 
-    <script src="./app.js?v=20260615-group-pages"></script>
+    <script src="./app.js?v=20260615-compact-live"></script>
   </body>
 </html>
