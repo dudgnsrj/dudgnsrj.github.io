@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>월드컵 승부의신</title>
-    <link rel="stylesheet" href="./styles.css?v=20260614-scoreboard-nextday" />
+    <link rel="stylesheet" href="./styles.css?v=20260615-mobile-tabs" />
   </head>
   <body>
     <div class="app-shell">
@@ -30,6 +30,13 @@
           </button>
         </div>
       </header>
+
+      <nav class="view-tabs" aria-label="화면 선택">
+        <button class="view-tab" type="button" data-view="leaderboard">현재 순위</button>
+        <button class="view-tab" type="button" data-view="personal">개인별 예측</button>
+        <button class="view-tab" type="button" data-view="groups">조 편성 및 경기별 예측</button>
+        <button class="view-tab" type="button" data-view="next">다음 경기</button>
+      </nav>
 
       <section class="ranking-section" aria-labelledby="rankingTitle">
         <div class="section-heading">
@@ -192,6 +199,6 @@
       </footer>
     </div>
 
-    <script src="./app.js?v=20260614-scoreboard-nextday"></script>
+    <script src="./app.js?v=20260615-mobile-tabs"></script>
   </body>
 </html>
