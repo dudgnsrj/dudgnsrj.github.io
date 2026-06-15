@@ -368,6 +368,16 @@ input::placeholder {
   align-items: start;
 }
 
+.workspace.group-overview-mode,
+.workspace.group-detail-mode {
+  grid-template-columns: 1fr;
+}
+
+.workspace.group-detail-mode {
+  max-width: 940px;
+  margin: 0 auto;
+}
+
 .groups-panel,
 .detail-panel > section,
 .ranking-section,
@@ -395,6 +405,11 @@ input::placeholder {
   top: 18px;
 }
 
+.workspace.group-detail-mode .detail-panel {
+  position: static;
+  grid-template-columns: 1fr;
+}
+
 .detail-panel > section {
   padding: 16px;
 }
@@ -415,16 +430,16 @@ input::placeholder {
 
 .groups-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
 .group-card {
   min-width: 0;
-  min-height: 236px;
+  min-height: 148px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 13px;
+  padding: 12px;
   background: var(--surface);
   color: var(--ink);
   text-align: left;
@@ -451,7 +466,7 @@ input::placeholder {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 9px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .group-letter {
@@ -486,12 +501,77 @@ input::placeholder {
   font-weight: 900;
 }
 
+.group-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.compact-button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 0.8rem;
+}
+
 .group-team-list,
 .selected-teams,
 .schedule-list,
 .participant-progress {
   display: grid;
   gap: 8px;
+}
+
+.group-flag-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.group-flag-chip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 6px;
+  border: 1px solid #ecf0ee;
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+
+.group-flag-chip .flag-frame {
+  width: 28px;
+  height: 21px;
+}
+
+.group-flag-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.group-flag-copy strong,
+.group-flag-copy em {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-flag-copy strong {
+  font-size: 0.82rem;
+  line-height: 1.05;
+  font-weight: 920;
+}
+
+.group-flag-copy em {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 820;
 }
 
 .team-row {
@@ -1422,6 +1502,10 @@ button.report-match-card:hover {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .workspace.group-detail-mode .detail-panel {
+    grid-template-columns: 1fr;
+  }
+
   .schedule-card,
   .prediction-card {
     grid-column: span 1;
@@ -1432,7 +1516,7 @@ button.report-match-card:hover {
   }
 
   .groups-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .ranking-list,
@@ -1484,6 +1568,10 @@ button.report-match-card:hover {
   .ranking-list,
   .participant-progress {
     grid-template-columns: 1fr;
+  }
+
+  .workspace.group-overview-mode .groups-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .report-match-card {
@@ -1577,5 +1665,11 @@ button.report-match-card:hover {
 
   .versus {
     display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .workspace.group-overview-mode .groups-grid {
+    grid-template-columns: 1fr;
   }
 }

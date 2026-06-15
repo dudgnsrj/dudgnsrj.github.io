@@ -184,11 +184,14 @@ const els = {
   editMatchPredictionBtn: document.querySelector("#editMatchPredictionBtn"),
   closeMatchReportBtn: document.querySelector("#closeMatchReportBtn"),
   participantStrip: document.querySelector(".participant-strip"),
+  groupsPanel: document.querySelector(".groups-panel"),
+  detailPanel: document.querySelector(".detail-panel"),
   groupsGrid: document.querySelector("#groupsGrid"),
   selectedGroupEyebrow: document.querySelector("#selectedGroupEyebrow"),
   selectedGroupTitle: document.querySelector("#selectedGroupTitle"),
   selectedTeams: document.querySelector("#selectedTeams"),
   groupProgress: document.querySelector("#groupProgress"),
+  backToGroupsBtn: document.querySelector("#backToGroupsBtn"),
   scheduleList: document.querySelector("#scheduleList"),
   predictionPanel: document.querySelector("#predictionPanel"),
   matchPredictionsPanel: document.querySelector("#matchPredictionsPanel"),
@@ -217,6 +220,7 @@ let lastSyncAt = null;
 let activeView = DEFAULT_VIEW;
 let activeReportParticipantId = "";
 let activeMatchReportId = "";
+let activeGroupPageId = "";
 normaliseState();
 render();
 syncFromServer();
@@ -553,6 +557,9 @@ function render() {
   if (activeMatchReportId && !matchById(activeMatchReportId)) {
     activeMatchReportId = "";
   }
+  if (activeGroupPageId && !GROUPS.some((group) => group.id === activeGroupPageId)) {
+    activeGroupPageId = "";
+  }
   hideViewPanels();
 
   if (activeMatchReportId) {
@@ -568,14 +575,24 @@ function render() {
     els.closeReportBtn.hidden = true;
     renderParticipantReport();
   } else if (activeView === "groups") {
+    const isGroupPage = Boolean(activeGroupPageId);
     els.workspace.hidden = false;
+    els.workspace.classList.toggle("group-overview-mode", !isGroupPage);
+    els.workspace.classList.toggle("group-detail-mode", isGroupPage);
+    els.groupsPanel.hidden = isGroupPage;
+    els.detailPanel.hidden = !isGroupPage;
     els.predictionCard.hidden = true;
-    els.matchPicksCard.hidden = false;
+    els.matchPicksCard.hidden = true;
+    els.resultCard.hidden = true;
     renderGroups();
-    renderSelectedGroup();
-    renderSchedule();
-    renderMatchPredictionsPanel();
-    if (IS_ADMIN) renderResultPanel();
+    if (isGroupPage) {
+      state.selectedGroup = activeGroupPageId;
+      if (!MATCHES.some((match) => match.id === state.selectedMatchId && match.group === state.selectedGroup)) {
+        state.selectedMatchId = matchesForGroup(state.selectedGroup)[0]?.id || MATCHES[0].id;
+      }
+      renderSelectedGroup();
+      renderSchedule();
+    }
   } else if (activeView === "next") {
     els.matchReportPage.hidden = false;
     renderNextMatchesPage();
@@ -614,6 +631,7 @@ function setActiveView(viewId) {
   if (!VIEW_IDS.has(viewId)) return;
   activeView = viewId;
   activeMatchReportId = "";
+  activeGroupPageId = "";
   if (viewId !== "personal") activeReportParticipantId = "";
   render();
 }
@@ -645,6 +663,9 @@ function hideViewPanels() {
   els.matchReportPage.hidden = true;
   els.startPanel.hidden = true;
   els.workspace.hidden = true;
+  els.workspace.classList.remove("group-overview-mode", "group-detail-mode");
+  els.groupsPanel.hidden = false;
+  els.detailPanel.hidden = false;
   els.closeReportBtn.hidden = false;
   els.predictionCard.hidden = false;
   els.matchPicksCard.hidden = false;
@@ -660,21 +681,23 @@ function renderStats() {
 function renderGroups() {
   els.groupsGrid.replaceChildren();
   GROUPS.forEach((group) => {
+    const isOpen = group.id === activeGroupPageId;
     const card = h("button", {
-      className: `group-card${group.id === state.selectedGroup ? " active" : ""}`,
+      className: `group-card${isOpen ? " active" : ""}`,
       type: "button",
-      "aria-pressed": String(group.id === state.selectedGroup),
+      "aria-pressed": String(isOpen),
+      "aria-label": `${group.id}조 경기 일정 열기`,
     });
     card.addEventListener("click", () => selectGroup(group.id));
 
     const header = h("div", { className: "group-card-header" }, [
       h("span", { className: "group-letter", text: group.id }),
-      h("span", { className: "group-card-title", text: `Group ${group.id}` }),
+      h("span", { className: "group-card-title", text: `${group.id}조` }),
       h("span", { className: "mini-progress", text: `${matchesForGroup(group.id).length}경기` }),
     ]);
 
-    const teamList = h("div", { className: "group-team-list" });
-    group.teams.forEach((code) => teamList.append(teamRow(code, "compact")));
+    const teamList = h("div", { className: "group-flag-grid" });
+    group.teams.forEach((code) => teamList.append(groupFlagChip(code)));
     card.append(header, teamList);
     els.groupsGrid.append(card);
   });
@@ -715,7 +738,7 @@ function renderSchedule() {
       ]),
       h("div", { className: "fixture-bottom" }, [
         h("span", { text: `${match.venue}, ${match.city}` }),
-        h("strong", { text: fixtureStatusText(pick, result) }),
+        h("strong", { text: fixtureScheduleStatus(match, result) }),
       ]),
     );
     els.scheduleList.append(row);
@@ -1042,13 +1065,24 @@ function participantReportMatch(match, pick, result, scored) {
 }
 
 function selectGroup(groupId) {
+  const firstMatch = matchesForGroup(groupId)[0];
+  if (!firstMatch) return;
+  activeGroupPageId = groupId;
   state.selectedGroup = groupId;
-  state.selectedMatchId = matchesForGroup(groupId)[0].id;
+  state.selectedMatchId = firstMatch.id;
+  activeMatchReportId = "";
   render();
+  els.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function selectMatch(matchId) {
   openMatchReport(matchId);
+}
+
+function closeGroupPage() {
+  activeGroupPageId = "";
+  render();
+  els.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function addParticipant(name) {
@@ -1267,6 +1301,16 @@ function fixtureStatusText(pick, result) {
   return `${pickText} · ${resultText}`;
 }
 
+function fixtureScheduleStatus(match, result) {
+  const pickedCount = countMatchPredictions(match.id);
+  const resultText = hasScore(result) ? `결과 ${result.home}-${result.away}` : "경기 전";
+  return `${resultText} · 예측 ${pickedCount}/${state.participants.length}`;
+}
+
+function countMatchPredictions(matchId) {
+  return state.participants.filter((participant) => hasScore(getPrediction(participant.id, matchId))).length;
+}
+
 function predictionResultClass(pick, result) {
   if (!hasScore(result) || !hasScore(pick)) return "";
   const scored = scorePrediction(pick, result);
@@ -1464,6 +1508,17 @@ function teamRow(code, size = "compact") {
     h("div", { className: "team-copy" }, [
       h("strong", { text: team.ko }),
       h("span", { text: `${team.en} · FIFA ${team.rank}위` }),
+    ]),
+  ]);
+}
+
+function groupFlagChip(code) {
+  const team = getTeam(code);
+  return h("span", { className: "group-flag-chip", title: `${team.ko} · FIFA ${team.rank}위` }, [
+    flagNode(code),
+    h("span", { className: "group-flag-copy" }, [
+      h("strong", { text: team.ko }),
+      h("em", { text: `FIFA ${team.rank}` }),
     ]),
   ]);
 }
@@ -1715,6 +1770,7 @@ els.viewTabs.forEach((tab) => {
 els.removeParticipantBtn.addEventListener("click", removeCurrentParticipant);
 els.closeReportBtn.addEventListener("click", closeParticipantReport);
 els.closeMatchReportBtn.addEventListener("click", closeMatchReport);
+els.backToGroupsBtn.addEventListener("click", closeGroupPage);
 els.editMatchPredictionBtn.addEventListener("click", showMatchPredictionEditor);
 els.exportBtn.addEventListener("click", exportState);
 els.importInput.addEventListener("change", (event) => importState(event.target.files[0]));
