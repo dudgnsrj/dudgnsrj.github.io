@@ -140,6 +140,49 @@ h2 {
   min-width: 320px;
 }
 
+.view-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 30px rgba(30, 45, 41, 0.08);
+}
+
+.view-tab {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 900;
+  white-space: normal;
+  text-align: center;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.view-tab:hover {
+  transform: translateY(-1px);
+  color: var(--ink);
+  background: #ffffff;
+}
+
+.view-tab.active {
+  border-color: rgba(18, 108, 90, 0.28);
+  background: var(--primary);
+  color: #ffffff;
+}
+
 .ghost-button,
 .primary-button,
 .danger-button,
@@ -910,7 +953,7 @@ input::placeholder {
 
 .ranking-section,
 .progress-section {
-  margin-top: 18px;
+  margin-top: 0;
 }
 
 .participant-report-page,
@@ -1425,6 +1468,10 @@ button.report-match-card:hover {
     flex: 1 1 130px;
   }
 
+  .view-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .stats-band {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1456,6 +1503,17 @@ button.report-match-card:hover {
   .participant-strip {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .view-tabs {
+    gap: 6px;
+    padding: 5px;
+  }
+
+  .view-tab {
+    min-height: 46px;
+    padding: 0 8px;
+    font-size: 0.84rem;
   }
 
   .start-panel {

@@ -4,6 +4,8 @@ const SYNC_INTERVAL_MS = 5000;
 const RANKING_AS_OF = "2026-04-01";
 const IS_ADMIN = new URLSearchParams(window.location.search).get("admin") === "1";
 const PREDICTIONS_LOCKED = true;
+const DEFAULT_VIEW = "leaderboard";
+const VIEW_IDS = new Set(["leaderboard", "personal", "groups", "next"]);
 const SUPABASE_URL = "https://tvhlonufurkazdykmomy.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_LAMJL5DR3A4gfb4vC_4nzg_BKMTvW9H";
 const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
@@ -164,6 +166,9 @@ const AI_PARTICIPANT = Object.freeze({ id: "person-ai-worldcup-god", name: "AI �
 const AI_PREDICTIONS = buildAiPredictions();
 
 const els = {
+  viewTabs: document.querySelectorAll(".view-tab"),
+  rankingSection: document.querySelector(".ranking-section"),
+  statsBand: document.querySelector(".stats-band"),
   workspace: document.querySelector("#workspace"),
   startPanel: document.querySelector("#startPanel"),
   participantReportPage: document.querySelector("#participantReportPage"),
@@ -188,6 +193,8 @@ const els = {
   predictionPanel: document.querySelector("#predictionPanel"),
   matchPredictionsPanel: document.querySelector("#matchPredictionsPanel"),
   resultPanel: document.querySelector("#resultPanel"),
+  predictionCard: document.querySelector(".prediction-card"),
+  matchPicksCard: document.querySelector(".match-picks-card"),
   saveStatus: document.querySelector("#saveStatus"),
   resultSaveStatus: document.querySelector("#resultSaveStatus"),
   participantForm: document.querySelector("#participantForm"),
@@ -207,6 +214,7 @@ const els = {
 let state = loadState();
 let serverOnline = false;
 let lastSyncAt = null;
+let activeView = DEFAULT_VIEW;
 let activeReportParticipantId = "";
 let activeMatchReportId = "";
 normaliseState();
@@ -538,31 +546,39 @@ function render() {
   renderParticipantSelect();
   renderStats();
   renderLeaderboard();
+  renderViewTabs();
   if (activeReportParticipantId && !participantById(activeReportParticipantId)) {
     activeReportParticipantId = "";
   }
   if (activeMatchReportId && !matchById(activeMatchReportId)) {
     activeMatchReportId = "";
   }
-  const hasActiveParticipantReport = Boolean(activeReportParticipantId);
-  const hasSelectedParticipant = Boolean(currentParticipant());
-  const shouldShowNextMatches = !hasSelectedParticipant && !hasActiveParticipantReport && !activeMatchReportId;
-  const matchReportId = activeMatchReportId;
-  const hasActiveMatchReport = Boolean(matchReportId);
-  renderEntryState(hasSelectedParticipant, hasActiveParticipantReport, hasActiveMatchReport || shouldShowNextMatches);
-  if (hasActiveParticipantReport) {
+  hideViewPanels();
+
+  if (activeMatchReportId) {
+    els.matchReportPage.hidden = false;
+    renderMatchReport(activeMatchReportId);
+  } else if (activeView === "leaderboard") {
+    els.rankingSection.hidden = false;
+    els.statsBand.hidden = false;
+  } else if (activeView === "personal") {
+    els.participantStrip.hidden = false;
+    ensurePersonalReportParticipant();
+    els.participantReportPage.hidden = false;
+    els.closeReportBtn.hidden = true;
     renderParticipantReport();
-  } else if (hasActiveMatchReport) {
-    renderMatchReport(matchReportId);
-  } else if (shouldShowNextMatches) {
-    renderNextMatchesPage();
-  } else if (hasSelectedParticipant) {
+  } else if (activeView === "groups") {
+    els.workspace.hidden = false;
+    els.predictionCard.hidden = true;
+    els.matchPicksCard.hidden = false;
     renderGroups();
     renderSelectedGroup();
     renderSchedule();
-    renderPredictionPanel();
     renderMatchPredictionsPanel();
     if (IS_ADMIN) renderResultPanel();
+  } else if (activeView === "next") {
+    els.matchReportPage.hidden = false;
+    renderNextMatchesPage();
   }
   saveState();
 }
@@ -594,12 +610,44 @@ function renderParticipantSelect() {
   els.participantSelect.value = selected;
 }
 
-function renderEntryState(hasSelectedParticipant, hasActiveParticipantReport, hasActiveMatchReport) {
-  els.participantStrip.hidden = hasActiveParticipantReport;
-  els.participantReportPage.hidden = !hasActiveParticipantReport;
-  els.matchReportPage.hidden = !hasActiveMatchReport || hasActiveParticipantReport;
-  els.startPanel.hidden = hasActiveParticipantReport || hasActiveMatchReport || hasSelectedParticipant;
-  els.workspace.hidden = hasActiveParticipantReport || hasActiveMatchReport || !hasSelectedParticipant;
+function setActiveView(viewId) {
+  if (!VIEW_IDS.has(viewId)) return;
+  activeView = viewId;
+  activeMatchReportId = "";
+  if (viewId !== "personal") activeReportParticipantId = "";
+  render();
+}
+
+function ensurePersonalReportParticipant() {
+  if (activeReportParticipantId && participantById(activeReportParticipantId)) return;
+  const selected = currentParticipant();
+  const fallback = state.participants.find((participant) => !participantIsAi(participant.id)) || state.participants[0];
+  const participant = selected || fallback;
+  if (!participant) return;
+  activeReportParticipantId = participant.id;
+  state.selectedParticipantId = participant.id;
+  renderParticipantSelect();
+}
+
+function renderViewTabs() {
+  els.viewTabs.forEach((tab) => {
+    const selected = tab.dataset.view === activeView;
+    tab.classList.toggle("active", selected);
+    tab.setAttribute("aria-selected", String(selected));
+  });
+}
+
+function hideViewPanels() {
+  els.rankingSection.hidden = true;
+  els.statsBand.hidden = true;
+  els.participantStrip.hidden = true;
+  els.participantReportPage.hidden = true;
+  els.matchReportPage.hidden = true;
+  els.startPanel.hidden = true;
+  els.workspace.hidden = true;
+  els.closeReportBtn.hidden = false;
+  els.predictionCard.hidden = false;
+  els.matchPicksCard.hidden = false;
 }
 
 function renderStats() {
@@ -622,7 +670,7 @@ function renderGroups() {
     const header = h("div", { className: "group-card-header" }, [
       h("span", { className: "group-letter", text: group.id }),
       h("span", { className: "group-card-title", text: `Group ${group.id}` }),
-      h("span", { className: "mini-progress", text: `${countGroupPredictions(group.id, state.selectedParticipantId)}/6` }),
+      h("span", { className: "mini-progress", text: `${matchesForGroup(group.id).length}경기` }),
     ]);
 
     const teamList = h("div", { className: "group-team-list" });
@@ -634,10 +682,9 @@ function renderGroups() {
 
 function renderSelectedGroup() {
   const group = currentGroup();
-  const progress = countGroupPredictions(group.id, state.selectedParticipantId);
   els.selectedGroupEyebrow.textContent = `Group ${group.id}`;
   els.selectedGroupTitle.textContent = `${group.id}조 일정`;
-  els.groupProgress.textContent = `${progress}/6`;
+  els.groupProgress.textContent = `${matchesForGroup(group.id).length}경기`;
   els.selectedTeams.replaceChildren();
   group.teams.forEach((code) => els.selectedTeams.append(teamRow(code, "large")));
 }
@@ -893,6 +940,7 @@ function renderNextMatchesPage() {
 function nextMatchCard(match) {
   const home = getTeam(match.home);
   const away = getTeam(match.away);
+  const pickedCount = state.participants.filter((participant) => hasScore(getPrediction(participant.id, match.id))).length;
   const card = h("button", {
     className: "next-match-card",
     type: "button",
@@ -909,7 +957,7 @@ function nextMatchCard(match) {
     ]),
     h("div", { className: "fixture-bottom" }, [
       h("span", { text: `${match.venue}, ${match.city}` }),
-      h("strong", { text: "경기 보기" }),
+      h("strong", { text: `예측 ${pickedCount}/${state.participants.length}` }),
     ]),
   ]);
   card.addEventListener("click", () => openMatchReport(match.id));
@@ -1011,6 +1059,7 @@ function addParticipant(name) {
   const participant = { id: createId("person"), name: cleanName };
   state.participants.push(participant);
   state.selectedParticipantId = participant.id;
+  if (activeView === "personal") activeReportParticipantId = participant.id;
   render();
   pushSharedState("/participants", {
     method: "POST",
@@ -1028,6 +1077,7 @@ function removeCurrentParticipant() {
   state.participants = state.participants.filter((item) => item.id !== participant.id);
   delete state.predictions[participant.id];
   state.selectedParticipantId = "";
+  if (activeReportParticipantId === participant.id) activeReportParticipantId = "";
   render();
   pushSharedState(`/participants/${encodeURIComponent(participant.id)}`, { method: "DELETE" });
 }
@@ -1239,8 +1289,10 @@ function openMatchReport(matchId) {
 function closeMatchReport() {
   activeMatchReportId = "";
   render();
-  if (currentParticipant()) {
+  if (activeView === "groups") {
     els.workspace.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else if (activeView === "next") {
+    els.matchReportPage.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
@@ -1257,8 +1309,12 @@ function showMatchPredictionEditor() {
 }
 
 function openParticipantReport(participantId) {
+  const participant = participantById(participantId);
+  if (!participant) return;
+  activeView = "personal";
   activeMatchReportId = "";
   activeReportParticipantId = participantId;
+  state.selectedParticipantId = participantId;
   render();
   els.participantReportPage.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1646,7 +1702,14 @@ els.participantForm.addEventListener("submit", (event) => {
 
 els.participantSelect.addEventListener("change", () => {
   state.selectedParticipantId = els.participantSelect.value;
+  if (activeView === "personal") {
+    activeReportParticipantId = state.selectedParticipantId;
+  }
   render();
+});
+
+els.viewTabs.forEach((tab) => {
+  tab.addEventListener("click", () => setActiveView(tab.dataset.view));
 });
 
 els.removeParticipantBtn.addEventListener("click", removeCurrentParticipant);
