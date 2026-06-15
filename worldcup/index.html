@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>월드컵 승부의신</title>
-    <link rel="stylesheet" href="./styles.css?v=20260615-mobile-tabs" />
+    <link rel="stylesheet" href="./styles.css?v=20260615-group-pages" />
   </head>
   <body>
     <div class="app-shell">
@@ -142,7 +142,10 @@
                 <p id="selectedGroupEyebrow" class="eyebrow">Group A</p>
                 <h2 id="selectedGroupTitle">A조 일정</h2>
               </div>
-              <span id="groupProgress" class="progress-pill">0/6</span>
+              <div class="group-detail-actions">
+                <span id="groupProgress" class="progress-pill">0/6</span>
+                <button id="backToGroupsBtn" class="ghost-button compact-button" type="button">전체 조</button>
+              </div>
             </div>
             <div id="selectedTeams" class="selected-teams"></div>
           </section>
@@ -199,6 +202,6 @@
       </footer>
     </div>
 
-    <script src="./app.js?v=20260615-mobile-tabs"></script>
+    <script src="./app.js?v=20260615-group-pages"></script>
   </body>
 </html>
