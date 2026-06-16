@@ -164,6 +164,7 @@ const MATCHES = [
 
 const AI_PARTICIPANT = Object.freeze({ id: "person-ai-worldcup-god", name: "AI 승부의신", isAi: true });
 const AI_PREDICTIONS = buildAiPredictions();
+const REMOVED_AI_PARTICIPANT_IDS = new Set(["person-ai-favorite-god", "person-ai-underdog-god"]);
 
 const els = {
   viewTabs: document.querySelectorAll(".view-tab"),
@@ -257,7 +258,7 @@ function normaliseState() {
   const seenParticipants = new Set();
   state.participants = Array.isArray(state.participants)
     ? state.participants
-      .filter((participant) => participant?.id && participant?.name)
+      .filter((participant) => participant?.id && participant?.name && !REMOVED_AI_PARTICIPANT_IDS.has(participant.id))
       .map((participant) => (
         participant.id === AI_PARTICIPANT.id
           ? { ...AI_PARTICIPANT }
@@ -271,6 +272,7 @@ function normaliseState() {
     : [];
   state.predictions = state.predictions && typeof state.predictions === "object" ? state.predictions : {};
   state.results = state.results && typeof state.results === "object" ? state.results : {};
+  REMOVED_AI_PARTICIPANT_IDS.forEach((participantId) => delete state.predictions[participantId]);
   state.participants = state.participants.filter((participant) => participant.id !== AI_PARTICIPANT.id);
   state.participants.push({ ...AI_PARTICIPANT });
   state.predictions[AI_PARTICIPANT.id] = { ...AI_PREDICTIONS };
@@ -302,7 +304,7 @@ function sharedState() {
 
 function persistablePredictions() {
   return Object.fromEntries(
-    Object.entries(state.predictions || {}).filter(([participantId]) => !participantIsAi(participantId)),
+    Object.entries(state.predictions || {}).filter(([participantId]) => !participantIsAi(participantId) && !REMOVED_AI_PARTICIPANT_IDS.has(participantId)),
   );
 }
 
