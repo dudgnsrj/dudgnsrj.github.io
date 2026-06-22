@@ -1013,7 +1013,8 @@ function specialRankingCard(category) {
   const title = hasWinner
     ? winners.map((winner) => winner.name).join(" · ")
     : "아직 없음";
-  const count = hasWinner ? `${winners[0].count}회` : "0회";
+  const unit = category.unit || "회";
+  const count = hasWinner ? `${winners[0].count}${unit}` : `0${unit}`;
   const card = h("article", { className: `special-card ${category.id}` }, [
     h("div", { className: "special-card-head" }, [
       h("span", { className: "special-badge", text: category.badge }),
@@ -1028,10 +1029,10 @@ function specialRankingCard(category) {
     ]),
   ]);
 
-  const examples = hasWinner ? winners.flatMap((winner) => winner.examples.slice(-2)).slice(-3) : [];
+  const examples = hasWinner ? [...new Set(winners.flatMap((winner) => winner.examples.slice(-2)))].slice(-3) : [];
   if (examples.length) {
     const list = h("div", { className: "special-examples" }, [
-      h("span", { text: "대표 경기" }),
+      h("span", { text: category.exampleLabel || "대표 경기" }),
     ]);
     examples.forEach((example) => list.append(h("em", { text: example })));
     card.append(list);
@@ -1490,11 +1491,17 @@ function specialRankingCategories() {
         ...participantSummaryForMatches(participant.id, matches),
       }))
       .sort((a, b) => b.points - a.points || b.exact - a.exact || b.outcome - a.outcome || a.order - b.order);
-    const topPoints = rows[0]?.points || 0;
-    if (!topPoints) return;
-    rows
-      .filter((row) => row.points === topPoints)
-      .forEach((row) => addSpecialStat(dailyTop, row.participant.id, `${formatDateKeyShort(dateKey)} · ${topPoints}점`));
+    rows.forEach((row) => {
+      const stat = dailyTop.get(row.participant.id);
+      if (!stat || !row.points) return;
+      const example = `${formatDateKeyShort(dateKey)} · ${row.points}점`;
+      if (row.points > stat.count) {
+        stat.count = row.points;
+        stat.examples = [example];
+      } else if (row.points === stat.count) {
+        stat.examples.push(example);
+      }
+    });
   });
 
   return [
@@ -1523,7 +1530,9 @@ function specialRankingCategories() {
       id: "daily-top",
       badge: "4",
       title: "일일문어",
-      description: "하루 기준 최다 득점자가 된 횟수",
+      description: "하루에 기록한 일일 득점 최고점",
+      unit: "점",
+      exampleLabel: "대표 날짜",
       winners: specialWinners(dailyTop),
     },
     {
