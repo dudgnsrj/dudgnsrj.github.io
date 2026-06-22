@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>월드컵 승부의신</title>
-    <link rel="stylesheet" href="./styles.css?v=20260616-remove-ai-variants" />
+    <link rel="stylesheet" href="./styles.css?v=20260622-rank-extras" />
   </head>
   <body>
     <div class="app-shell">
@@ -39,6 +39,8 @@
 
       <nav class="view-tabs" aria-label="화면 선택">
         <button class="view-tab" type="button" data-view="leaderboard">현재 순위</button>
+        <button class="view-tab" type="button" data-view="trend">순위 그래프</button>
+        <button class="view-tab" type="button" data-view="special">이색 순위</button>
         <button class="view-tab" type="button" data-view="personal">개인별 예측</button>
         <button class="view-tab" type="button" data-view="groups">조 편성 및 경기별 예측</button>
         <button class="view-tab" type="button" data-view="next">다음 경기</button>
@@ -53,6 +55,29 @@
           <p class="source-note">정확한 스코어 3점 · 승무패 1점</p>
         </div>
         <div id="rankingList" class="ranking-list"></div>
+      </section>
+
+      <section id="rankTrendSection" class="rank-trend-section" aria-labelledby="rankTrendTitle" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Rank Timeline</p>
+            <h2 id="rankTrendTitle">날짜별 순위 그래프</h2>
+          </div>
+          <p class="source-note">한국 시간 기준 · 경기 종료일별 누적 순위</p>
+        </div>
+        <div id="rankTrendChart" class="rank-trend-chart"></div>
+        <div id="rankTrendLegend" class="rank-trend-legend"></div>
+      </section>
+
+      <section id="specialRankingSection" class="special-ranking-section" aria-labelledby="specialRankingTitle" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Side Quests</p>
+            <h2 id="specialRankingTitle">이색 순위표</h2>
+          </div>
+          <p class="source-note">완료된 경기 기준 · 각 부문 1위</p>
+        </div>
+        <div id="specialRankings" class="special-rankings"></div>
       </section>
 
       <section class="participant-strip" aria-label="참가자 관리">
@@ -182,6 +207,6 @@
       </footer>
     </div>
 
-    <script src="./app.js?v=20260616-remove-ai-variants"></script>
+    <script src="./app.js?v=20260622-rank-extras"></script>
   </body>
 </html>

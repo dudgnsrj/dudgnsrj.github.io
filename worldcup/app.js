@@ -5,7 +5,7 @@ const RANKING_AS_OF = "2026-04-01";
 const IS_ADMIN = new URLSearchParams(window.location.search).get("admin") === "1";
 const PREDICTIONS_LOCKED = true;
 const DEFAULT_VIEW = "leaderboard";
-const VIEW_IDS = new Set(["leaderboard", "personal", "groups", "next"]);
+const VIEW_IDS = new Set(["leaderboard", "trend", "special", "personal", "groups", "next"]);
 const SUPABASE_URL = "https://tvhlonufurkazdykmomy.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_LAMJL5DR3A4gfb4vC_4nzg_BKMTvW9H";
 const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
@@ -207,6 +207,11 @@ const els = {
   adminActions: document.querySelector("#adminActions"),
   resultCard: document.querySelector("#resultCard"),
   rankingList: document.querySelector("#rankingList"),
+  rankTrendSection: document.querySelector("#rankTrendSection"),
+  rankTrendChart: document.querySelector("#rankTrendChart"),
+  rankTrendLegend: document.querySelector("#rankTrendLegend"),
+  specialRankingSection: document.querySelector("#specialRankingSection"),
+  specialRankings: document.querySelector("#specialRankings"),
   exportBtn: document.querySelector("#exportBtn"),
   importInput: document.querySelector("#importInput"),
   resetBtn: document.querySelector("#resetBtn"),
@@ -565,6 +570,12 @@ function render() {
     renderMatchReport(activeMatchReportId);
   } else if (activeView === "leaderboard") {
     els.rankingSection.hidden = false;
+  } else if (activeView === "trend") {
+    els.rankTrendSection.hidden = false;
+    renderRankTrend();
+  } else if (activeView === "special") {
+    els.specialRankingSection.hidden = false;
+    renderSpecialRankings();
   } else if (activeView === "personal") {
     els.participantStrip.hidden = false;
     ensurePersonalReportParticipant();
@@ -663,6 +674,8 @@ function renderViewTabs() {
 
 function hideViewPanels() {
   els.rankingSection.hidden = true;
+  els.rankTrendSection.hidden = true;
+  els.specialRankingSection.hidden = true;
   els.participantStrip.hidden = true;
   els.participantReportPage.hidden = true;
   els.matchReportPage.hidden = true;
@@ -899,6 +912,131 @@ function renderLeaderboard() {
     rankCard.addEventListener("click", () => openParticipantReport(row.id));
     els.rankingList.append(rankCard);
   });
+}
+
+function renderRankTrend() {
+  els.rankTrendChart.replaceChildren();
+  els.rankTrendLegend.replaceChildren();
+
+  const history = rankHistoryByDate();
+  if (!history.length) {
+    els.rankTrendChart.append(emptyState("그래프를 만들 결과가 없습니다.", "경기 결과가 입력되면 날짜별 누적 순위가 표시됩니다."));
+    return;
+  }
+
+  const participants = getLeaderboard();
+  const width = 900;
+  const height = 330;
+  const pad = { top: 28, right: 28, bottom: 48, left: 48 };
+  const chartWidth = width - pad.left - pad.right;
+  const chartHeight = height - pad.top - pad.bottom;
+  const maxRank = Math.max(1, participants.length);
+  const rankSpan = Math.max(1, maxRank - 1);
+  const xFor = (index) => pad.left + (history.length === 1 ? chartWidth / 2 : (chartWidth * index) / (history.length - 1));
+  const yFor = (rank) => pad.top + ((rank - 1) / rankSpan) * chartHeight;
+  const colors = ["#126c5a", "#285f9f", "#c33e4b", "#d7a629", "#6b4aa1", "#0f766e", "#9b4d1f", "#334155"];
+
+  const svg = s("svg", {
+    class: "rank-trend-svg",
+    viewBox: `0 0 ${width} ${height}`,
+    role: "img",
+    "aria-label": "날짜별 누적 순위 변화 그래프",
+  });
+
+  for (let rank = 1; rank <= maxRank; rank += 1) {
+    const y = yFor(rank);
+    svg.append(
+      s("line", { class: "rank-grid-line", x1: pad.left, y1: y, x2: width - pad.right, y2: y }),
+      s("text", { class: "rank-axis-label", x: pad.left - 12, y: y + 4, "text-anchor": "end", text: `${rank}위` }),
+    );
+  }
+
+  history.forEach((day, index) => {
+    const x = xFor(index);
+    svg.append(
+      s("line", { class: "rank-date-line", x1: x, y1: pad.top, x2: x, y2: height - pad.bottom }),
+      s("text", { class: "rank-date-label", x, y: height - 17, "text-anchor": "middle", text: formatDateKeyShort(day.dateKey) }),
+    );
+  });
+
+  participants.forEach((participant, participantIndex) => {
+    const color = colors[participantIndex % colors.length];
+    const points = history
+      .map((day, index) => {
+        const row = day.rows.find((entry) => entry.id === participant.id);
+        return row ? { x: xFor(index), y: yFor(row.rank), rank: row.rank, points: row.points } : null;
+      })
+      .filter(Boolean);
+    if (!points.length) return;
+
+    const pathData = points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+    svg.append(s("path", { class: "rank-line", d: pathData, style: `--line-color: ${color}` }));
+    points.forEach((point) => {
+      svg.append(
+        s("circle", { class: "rank-dot", cx: point.x, cy: point.y, r: 4.2, style: `--line-color: ${color}` }),
+        s("title", { text: `${participant.name} · ${point.rank}위 · ${point.points}점` }),
+      );
+    });
+  });
+
+  els.rankTrendChart.append(svg);
+
+  participants.forEach((participant, index) => {
+    const color = colors[index % colors.length];
+    const latest = history[history.length - 1].rows.find((entry) => entry.id === participant.id);
+    els.rankTrendLegend.append(
+      h("article", { className: `rank-trend-legend-item${participantIsAi(participant.id) ? " ai-card" : ""}` }, [
+        h("span", { className: "legend-swatch", style: `--swatch: ${color}` }),
+        h("div", {}, [
+          h("strong", { text: participant.name }),
+          h("span", { text: latest ? `${latest.rank}위 · ${latest.points}점` : "기록 없음" }),
+        ]),
+      ]),
+    );
+  });
+}
+
+function renderSpecialRankings() {
+  els.specialRankings.replaceChildren();
+  const categories = specialRankingCategories();
+  if (!categories.length) {
+    els.specialRankings.append(emptyState("이색 순위를 만들 참가자가 없습니다.", "일반 참가자 예측과 경기 결과가 쌓이면 이곳에 표시됩니다."));
+    return;
+  }
+  categories.forEach((category) => els.specialRankings.append(specialRankingCard(category)));
+}
+
+function specialRankingCard(category) {
+  const winners = category.winners;
+  const hasWinner = winners.length > 0;
+  const title = hasWinner
+    ? winners.map((winner) => winner.name).join(" · ")
+    : "아직 없음";
+  const count = hasWinner ? `${winners[0].count}회` : "0회";
+  const card = h("article", { className: `special-card ${category.id}` }, [
+    h("div", { className: "special-card-head" }, [
+      h("span", { className: "special-badge", text: category.badge }),
+      h("div", {}, [
+        h("h3", { text: category.title }),
+        h("p", { text: category.description }),
+      ]),
+    ]),
+    h("div", { className: "special-winner" }, [
+      h("strong", { text: title }),
+      h("span", { text: count }),
+    ]),
+  ]);
+
+  const examples = hasWinner ? winners.flatMap((winner) => winner.examples.slice(-2)).slice(-3) : [];
+  if (examples.length) {
+    const list = h("div", { className: "special-examples" }, [
+      h("span", { text: "대표 경기" }),
+    ]);
+    examples.forEach((example) => list.append(h("em", { text: example })));
+    card.append(list);
+  }
+
+  return card;
 }
 
 function renderParticipantReport() {
@@ -1239,27 +1377,159 @@ function countGroupPredictions(groupId, participantId) {
 }
 
 function getLeaderboard() {
+  return leaderboardForMatches(MATCHES);
+}
+
+function leaderboardForMatches(matches) {
   return state.participants
     .map((participant, order) => {
-      const summary = MATCHES.reduce(
-        (acc, match) => {
-          const pick = getPrediction(participant.id, match.id);
-          const result = getResult(match.id);
-          const score = scorePrediction(pick, result);
-          acc.points += score.points;
-          acc.exact += score.exact ? 1 : 0;
-          acc.outcome += score.outcome ? 1 : 0;
-          acc.picked += hasScore(pick) ? 1 : 0;
-          acc.scoredMatches += hasScore(pick) && hasScore(result) ? 1 : 0;
-          return acc;
-        },
-        { points: 0, exact: 0, outcome: 0, picked: 0, scoredMatches: 0 },
-      );
+      const summary = participantSummaryForMatches(participant.id, matches);
       return { ...participant, order, ...summary };
     })
     .sort((a, b) => {
       return b.points - a.points || b.exact - a.exact || b.outcome - a.outcome || b.picked - a.picked || a.order - b.order;
     });
+}
+
+function participantSummaryForMatches(participantId, matches) {
+  return matches.reduce(
+    (acc, match) => {
+      const pick = getPrediction(participantId, match.id);
+      const result = getResult(match.id);
+      const score = scorePrediction(pick, result);
+      acc.points += score.points;
+      acc.exact += score.exact ? 1 : 0;
+      acc.outcome += score.outcome ? 1 : 0;
+      acc.picked += hasScore(pick) ? 1 : 0;
+      acc.scoredMatches += hasScore(pick) && hasScore(result) ? 1 : 0;
+      return acc;
+    },
+    { points: 0, exact: 0, outcome: 0, picked: 0, scoredMatches: 0 },
+  );
+}
+
+function completedMatchesSorted() {
+  return MATCHES
+    .filter((match) => hasScore(getResult(match.id)))
+    .sort((a, b) => koreaDateFromMatch(a) - koreaDateFromMatch(b) || a.no - b.no);
+}
+
+function rankHistoryByDate() {
+  const completed = completedMatchesSorted();
+  const byDate = new Map();
+  completed.forEach((match) => {
+    const dateKey = koreaDateKey(match);
+    byDate.set(dateKey, [...(byDate.get(dateKey) || []), match]);
+  });
+
+  const cumulative = [];
+  return Array.from(byDate.entries()).map(([dateKey, matches]) => {
+    cumulative.push(...matches);
+    const rows = leaderboardForMatches(cumulative).map((row, index) => ({ ...row, rank: index + 1 }));
+    return { dateKey, matchCount: cumulative.length, rows };
+  });
+}
+
+function specialRankingCategories() {
+  const humans = state.participants.filter((participant) => !participantIsAi(participant.id));
+  if (!humans.length) return [];
+
+  const antiAi = specialStatMap(humans);
+  const solo = specialStatMap(humans);
+  const closeMiss = specialStatMap(humans);
+  const completed = completedMatchesSorted();
+
+  completed.forEach((match) => {
+    const result = getResult(match.id);
+    const resultOutcome = outcome(result);
+    const aiPick = getPrediction(AI_PARTICIPANT.id, match.id);
+    const aiOutcome = hasScore(aiPick) ? outcome(aiPick) : "";
+    const humanPicks = humans
+      .map((participant) => ({ participant, pick: getPrediction(participant.id, match.id) }))
+      .filter((entry) => hasScore(entry.pick));
+
+    humanPicks.forEach(({ participant, pick }) => {
+      const pickOutcome = outcome(pick);
+      const scored = scorePrediction(pick, result);
+      if (aiOutcome && pickOutcome !== aiOutcome && scored.outcome) {
+        addSpecialStat(antiAi, participant.id, specialMatchNote(match, `AI ${outcomeLabel(aiOutcome)} · 본인 ${outcomeLabel(pickOutcome)}`));
+      }
+      if (!scored.exact && isOneGoalMiss(pick, result)) {
+        addSpecialStat(closeMiss, participant.id, specialMatchNote(match, `예측 ${formatScore(pick, "-")}`));
+      }
+    });
+
+    if (humans.length >= 3 && humanPicks.length === humans.length) {
+      humanPicks.forEach(({ participant, pick }) => {
+        const pickOutcome = outcome(pick);
+        const otherOutcomes = humanPicks
+          .filter((entry) => entry.participant.id !== participant.id)
+          .map((entry) => outcome(entry.pick));
+        const othersAgree = otherOutcomes.length > 0 && otherOutcomes.every((item) => item === otherOutcomes[0]);
+        if (othersAgree && pickOutcome !== otherOutcomes[0] && pickOutcome === resultOutcome) {
+          addSpecialStat(solo, participant.id, specialMatchNote(match, `혼자 ${outcomeLabel(pickOutcome)}`));
+        }
+      });
+    }
+  });
+
+  return [
+    {
+      id: "anti-ai",
+      badge: "1",
+      title: "역배의신",
+      description: "AI 승부의신과 다른 승무패 선택으로 맞힌 횟수",
+      winners: specialWinners(antiAi),
+    },
+    {
+      id: "solo",
+      badge: "2",
+      title: "홍대의신",
+      description: "남들은 같은 선택, 혼자 다른 선택으로 맞힌 횟수",
+      winners: specialWinners(solo),
+    },
+    {
+      id: "close-miss",
+      badge: "3",
+      title: "한끗의신",
+      description: "정확한 스코어가 총 1골 차이로 빗나간 횟수",
+      winners: specialWinners(closeMiss),
+    },
+  ];
+}
+
+function specialStatMap(participants) {
+  return new Map(participants.map((participant, order) => [participant.id, {
+    id: participant.id,
+    name: participant.name,
+    order,
+    count: 0,
+    examples: [],
+  }]));
+}
+
+function addSpecialStat(stats, participantId, example) {
+  const stat = stats.get(participantId);
+  if (!stat) return;
+  stat.count += 1;
+  stat.examples.push(example);
+}
+
+function specialWinners(stats) {
+  const rows = Array.from(stats.values()).sort((a, b) => b.count - a.count || a.order - b.order);
+  const top = rows[0]?.count || 0;
+  return top ? rows.filter((row) => row.count === top) : [];
+}
+
+function specialMatchNote(match, note) {
+  const result = getResult(match.id);
+  return `M${match.no} ${getTeam(match.home).ko} ${formatScore(result, "-")} ${getTeam(match.away).ko} · ${note}`;
+}
+
+function isOneGoalMiss(pick, result) {
+  if (!hasScore(pick) || !hasScore(result)) return false;
+  if (pick.home === result.home && pick.away === result.away) return false;
+  return Math.abs(pick.home - result.home) + Math.abs(pick.away - result.away) === 1;
 }
 
 function scorePrediction(pick, result) {
@@ -1281,6 +1551,12 @@ function outcome(score) {
   if (score.home > score.away) return "home";
   if (score.home < score.away) return "away";
   return "draw";
+}
+
+function outcomeLabel(value) {
+  if (value === "home") return "홈승";
+  if (value === "away") return "원정승";
+  return "무승부";
 }
 
 function fixtureStatusText(pick, result) {
@@ -1600,6 +1876,11 @@ function formatKoreaDate(match) {
   }).format(date);
 }
 
+function formatDateKeyShort(dateKey) {
+  const [, month, day] = dateKey.split("-");
+  return `${Number(month)}/${Number(day)}`;
+}
+
 function formatKoreaTime(match) {
   return `${new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -1757,6 +2038,21 @@ function h(tag, props = {}, children = []) {
     else if (key === "text") node.textContent = value;
     else if (key === "style") node.setAttribute("style", value);
     else if (key in node) node[key] = value;
+    else node.setAttribute(key, value);
+  });
+  const childList = Array.isArray(children) ? children : [children];
+  childList.forEach((child) => {
+    if (child === null || child === undefined) return;
+    node.append(child instanceof Node ? child : document.createTextNode(String(child)));
+  });
+  return node;
+}
+
+function s(tag, props = {}, children = []) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(props).forEach(([key, value]) => {
+    if (value === false || value === null || value === undefined) return;
+    if (key === "text") node.textContent = value;
     else node.setAttribute(key, value);
   });
   const childList = Array.isArray(children) ? children : [children];
