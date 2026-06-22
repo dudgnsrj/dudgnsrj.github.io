@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>월드컵 승부의신</title>
-    <link rel="stylesheet" href="./styles.css?v=20260622-rank-extras" />
+    <link rel="stylesheet" href="./styles.css?v=20260622-score-trend" />
   </head>
   <body>
     <div class="app-shell">
@@ -39,7 +39,7 @@
 
       <nav class="view-tabs" aria-label="화면 선택">
         <button class="view-tab" type="button" data-view="leaderboard">현재 순위</button>
-        <button class="view-tab" type="button" data-view="trend">순위 그래프</button>
+        <button class="view-tab" type="button" data-view="trend">점수 그래프</button>
         <button class="view-tab" type="button" data-view="special">이색 순위</button>
         <button class="view-tab" type="button" data-view="personal">개인별 예측</button>
         <button class="view-tab" type="button" data-view="groups">조 편성 및 경기별 예측</button>
@@ -60,10 +60,10 @@
       <section id="rankTrendSection" class="rank-trend-section" aria-labelledby="rankTrendTitle" hidden>
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Rank Timeline</p>
-            <h2 id="rankTrendTitle">날짜별 순위 그래프</h2>
+            <p class="eyebrow">Score Timeline</p>
+            <h2 id="rankTrendTitle">날짜별 점수 그래프</h2>
           </div>
-          <p class="source-note">한국 시간 기준 · 경기 종료일별 누적 순위</p>
+          <p class="source-note">한국 시간 기준 · 경기 종료일별 누적 점수</p>
         </div>
         <div id="rankTrendChart" class="rank-trend-chart"></div>
         <div id="rankTrendLegend" class="rank-trend-legend"></div>
@@ -207,6 +207,6 @@
       </footer>
     </div>
 
-    <script src="./app.js?v=20260622-rank-extras"></script>
+    <script src="./app.js?v=20260622-score-trend"></script>
   </body>
 </html>

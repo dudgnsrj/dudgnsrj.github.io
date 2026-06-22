@@ -920,7 +920,7 @@ function renderRankTrend() {
 
   const history = rankHistoryByDate();
   if (!history.length) {
-    els.rankTrendChart.append(emptyState("그래프를 만들 결과가 없습니다.", "경기 결과가 입력되면 날짜별 누적 순위가 표시됩니다."));
+    els.rankTrendChart.append(emptyState("그래프를 만들 결과가 없습니다.", "경기 결과가 입력되면 날짜별 누적 점수가 표시됩니다."));
     return;
   }
 
@@ -930,24 +930,25 @@ function renderRankTrend() {
   const pad = { top: 28, right: 28, bottom: 48, left: 48 };
   const chartWidth = width - pad.left - pad.right;
   const chartHeight = height - pad.top - pad.bottom;
-  const maxRank = Math.max(1, participants.length);
-  const rankSpan = Math.max(1, maxRank - 1);
+  const maxPoints = Math.max(3, ...history.flatMap((day) => day.rows.map((row) => row.points)));
+  const tickStep = Math.max(1, Math.ceil(maxPoints / 5));
+  const topScore = Math.ceil(maxPoints / tickStep) * tickStep;
   const xFor = (index) => pad.left + (history.length === 1 ? chartWidth / 2 : (chartWidth * index) / (history.length - 1));
-  const yFor = (rank) => pad.top + ((rank - 1) / rankSpan) * chartHeight;
+  const yFor = (points) => pad.top + chartHeight - (points / topScore) * chartHeight;
   const colors = ["#126c5a", "#285f9f", "#c33e4b", "#d7a629", "#6b4aa1", "#0f766e", "#9b4d1f", "#334155"];
 
   const svg = s("svg", {
     class: "rank-trend-svg",
     viewBox: `0 0 ${width} ${height}`,
     role: "img",
-    "aria-label": "날짜별 누적 순위 변화 그래프",
+    "aria-label": "날짜별 누적 점수 변화 그래프",
   });
 
-  for (let rank = 1; rank <= maxRank; rank += 1) {
-    const y = yFor(rank);
+  for (let score = 0; score <= topScore; score += tickStep) {
+    const y = yFor(score);
     svg.append(
       s("line", { class: "rank-grid-line", x1: pad.left, y1: y, x2: width - pad.right, y2: y }),
-      s("text", { class: "rank-axis-label", x: pad.left - 12, y: y + 4, "text-anchor": "end", text: `${rank}위` }),
+      s("text", { class: "rank-axis-label", x: pad.left - 12, y: y + 4, "text-anchor": "end", text: `${score}점` }),
     );
   }
 
@@ -964,7 +965,7 @@ function renderRankTrend() {
     const points = history
       .map((day, index) => {
         const row = day.rows.find((entry) => entry.id === participant.id);
-        return row ? { x: xFor(index), y: yFor(row.rank), rank: row.rank, points: row.points } : null;
+        return row ? { x: xFor(index), y: yFor(row.points), rank: row.rank, points: row.points } : null;
       })
       .filter(Boolean);
     if (!points.length) return;
@@ -974,7 +975,7 @@ function renderRankTrend() {
     points.forEach((point) => {
       svg.append(
         s("circle", { class: "rank-dot", cx: point.x, cy: point.y, r: 4.2, style: `--line-color: ${color}` }),
-        s("title", { text: `${participant.name} · ${point.rank}위 · ${point.points}점` }),
+        s("title", { text: `${participant.name} · ${point.points}점 · ${point.rank}위` }),
       );
     });
   });
@@ -989,7 +990,7 @@ function renderRankTrend() {
         h("span", { className: "legend-swatch", style: `--swatch: ${color}` }),
         h("div", {}, [
           h("strong", { text: participant.name }),
-          h("span", { text: latest ? `${latest.rank}위 · ${latest.points}점` : "기록 없음" }),
+          h("span", { text: latest ? `${latest.points}점 · ${latest.rank}위` : "기록 없음" }),
         ]),
       ]),
     );
