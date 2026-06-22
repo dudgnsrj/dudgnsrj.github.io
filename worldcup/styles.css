@@ -1749,6 +1749,16 @@ button.report-match-card:hover {
   background: #fff7f8;
 }
 
+.special-card.daily-top {
+  border-color: rgba(15, 118, 110, 0.24);
+  background: #f3fbfa;
+}
+
+.special-card.draw-hunter {
+  border-color: rgba(107, 74, 161, 0.24);
+  background: #faf7ff;
+}
+
 .special-card-head {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

@@ -1438,13 +1438,18 @@ function specialRankingCategories() {
   const antiAi = specialStatMap(humans);
   const solo = specialStatMap(humans);
   const closeMiss = specialStatMap(humans);
+  const dailyTop = specialStatMap(humans);
+  const drawHunter = specialStatMap(humans);
   const completed = completedMatchesSorted();
+  const matchesByDate = new Map();
 
   completed.forEach((match) => {
     const result = getResult(match.id);
     const resultOutcome = outcome(result);
     const aiPick = getPrediction(AI_PARTICIPANT.id, match.id);
     const aiOutcome = hasScore(aiPick) ? outcome(aiPick) : "";
+    const dateKey = koreaDateKey(match);
+    matchesByDate.set(dateKey, [...(matchesByDate.get(dateKey) || []), match]);
     const humanPicks = humans
       .map((participant) => ({ participant, pick: getPrediction(participant.id, match.id) }))
       .filter((entry) => hasScore(entry.pick));
@@ -1454,6 +1459,9 @@ function specialRankingCategories() {
       const scored = scorePrediction(pick, result);
       if (aiOutcome && pickOutcome !== aiOutcome && scored.outcome) {
         addSpecialStat(antiAi, participant.id, specialMatchNote(match, `AI ${outcomeLabel(aiOutcome)} · 본인 ${outcomeLabel(pickOutcome)}`));
+      }
+      if (resultOutcome === "draw" && pickOutcome === "draw") {
+        addSpecialStat(drawHunter, participant.id, specialMatchNote(match, `예측 ${formatScore(pick, "-")}`));
       }
       if (!scored.exact && isOneGoalMiss(pick, result)) {
         addSpecialStat(closeMiss, participant.id, specialMatchNote(match, `예측 ${formatScore(pick, "-")}`));
@@ -1472,6 +1480,21 @@ function specialRankingCategories() {
         }
       });
     }
+  });
+
+  matchesByDate.forEach((matches, dateKey) => {
+    const rows = humans
+      .map((participant, order) => ({
+        participant,
+        order,
+        ...participantSummaryForMatches(participant.id, matches),
+      }))
+      .sort((a, b) => b.points - a.points || b.exact - a.exact || b.outcome - a.outcome || a.order - b.order);
+    const topPoints = rows[0]?.points || 0;
+    if (!topPoints) return;
+    rows
+      .filter((row) => row.points === topPoints)
+      .forEach((row) => addSpecialStat(dailyTop, row.participant.id, `${formatDateKeyShort(dateKey)} · ${topPoints}점`));
   });
 
   return [
@@ -1495,6 +1518,20 @@ function specialRankingCategories() {
       title: "한끗의신",
       description: "정확한 스코어가 총 1골 차이로 빗나간 횟수",
       winners: specialWinners(closeMiss),
+    },
+    {
+      id: "daily-top",
+      badge: "4",
+      title: "일일문어",
+      description: "하루 기준 최다 득점자가 된 횟수",
+      winners: specialWinners(dailyTop),
+    },
+    {
+      id: "draw-hunter",
+      badge: "5",
+      title: "무잡이",
+      description: "실제 무승부 경기의 무승부를 맞힌 횟수",
+      winners: specialWinners(drawHunter),
     },
   ];
 }
