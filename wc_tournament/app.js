@@ -4,6 +4,7 @@ const TOURNAMENT_PREFIX = "T";
 const STORAGE_KEY = "worldcup-tournament-picks-v1";
 const SELECTED_PLAYER_KEY = "worldcup-tournament-selected-player-v1";
 const DEMO_MODE = new URLSearchParams(window.location.search).has("demo");
+const TOURNAMENT_PARTICIPANT_ID_PREFIX = "person-tournament-";
 const TOURNAMENT_PARTICIPANT_NAMES = new Set(["조영훈", "김병진"]);
 
 const TEAMS = {
@@ -143,7 +144,6 @@ async function init() {
 
 function bindEvents() {
   if (els.addParticipantForm) {
-    els.addParticipantForm.hidden = true;
     els.addParticipantForm.addEventListener("submit", addParticipant);
   }
   els.clearPicksBtn.addEventListener("click", clearCurrentParticipantPicks);
@@ -178,7 +178,7 @@ async function loadSharedState() {
 
   const tournamentParticipants = participants
     .map((participant) => ({ id: participant.id, name: participant.name }))
-    .filter((participant) => TOURNAMENT_PARTICIPANT_NAMES.has(participant.name));
+    .filter(isTournamentParticipant);
 
   state.participants = tournamentParticipants.length
     ? tournamentParticipants
@@ -203,7 +203,7 @@ function loadLocalState() {
   try {
     const saved = JSON.parse(raw);
     if (Array.isArray(saved.participants) && saved.participants.length) {
-      const tournamentParticipants = saved.participants.filter((participant) => TOURNAMENT_PARTICIPANT_NAMES.has(participant.name));
+      const tournamentParticipants = saved.participants.filter(isTournamentParticipant);
       state.participants = tournamentParticipants.length ? tournamentParticipants : [...DEFAULT_PARTICIPANTS];
     }
     if (saved.picks && typeof saved.picks === "object") {
@@ -480,7 +480,7 @@ async function addParticipant(event) {
   }
 
   const participant = {
-    id: `person-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+    id: `${TOURNAMENT_PARTICIPANT_ID_PREFIX}${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
     name,
   };
 
@@ -593,6 +593,10 @@ async function deletePick(participantId, matchId) {
 
 function getPick(participantId, matchId) {
   return state.picks[participantId]?.[matchId] || null;
+}
+
+function isTournamentParticipant(participant) {
+  return TOURNAMENT_PARTICIPANT_NAMES.has(participant.name) || participant.id.startsWith(TOURNAMENT_PARTICIPANT_ID_PREFIX);
 }
 
 function resolveSlot(slot, participantId) {
