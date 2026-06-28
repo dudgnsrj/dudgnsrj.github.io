@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>월드컵 승부의신 32강 토너먼트</title>
+    <link rel="stylesheet" href="./styles.css?v=20260628-tournament-v1" />
+    <script defer src="./app.js?v=20260628-tournament-v1"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="logo-mark" href="/worldcup/" aria-label="조별예선 페이지로 이동">
+          <span class="logo-year">26</span>
+          <span class="logo-copy">FIFA<br />WORLD CUP</span>
+        </a>
+        <div class="title-block">
+          <p class="eyebrow">Knockout Pick'em</p>
+          <h1>월드컵 승부의신 32강 토너먼트</h1>
+          <p class="subtitle">32강부터 결승까지 승자를 선택해서 우승팀을 예측</p>
+        </div>
+        <a class="text-link" href="/worldcup/">조별예선 보기</a>
+      </header>
+
+      <main>
+        <section class="control-band" aria-labelledby="participantsTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Players</p>
+              <h2 id="participantsTitle">참가자</h2>
+            </div>
+            <p id="saveStatus" class="save-status">불러오는 중</p>
+          </div>
+          <div id="participantButtons" class="participant-buttons"></div>
+          <form id="addParticipantForm" class="add-participant-form">
+            <input id="participantNameInput" type="text" maxlength="18" placeholder="참가자 이름" autocomplete="off" />
+            <button type="submit">추가</button>
+          </form>
+        </section>
+
+        <section class="summary-band" aria-label="토너먼트 요약">
+          <div id="championPanel" class="champion-panel"></div>
+          <div id="overallPanel" class="overall-panel"></div>
+        </section>
+
+        <nav id="roundTabs" class="round-tabs" aria-label="라운드 선택"></nav>
+
+        <section class="bracket-shell" aria-labelledby="bracketTitle">
+          <div class="section-heading bracket-heading">
+            <div>
+              <p class="eyebrow">Bracket</p>
+              <h2 id="bracketTitle">토너먼트 트리</h2>
+            </div>
+            <button id="clearPicksBtn" class="ghost-button" type="button">내 예측 초기화</button>
+          </div>
+          <div class="bracket-scroll" tabindex="0">
+            <div id="bracketGrid" class="bracket-grid"></div>
+          </div>
+        </section>
+
+        <section class="report-grid" aria-label="전체 예측 현황">
+          <div class="report-panel">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Champions</p>
+                <h2>우승팀 예측 현황</h2>
+              </div>
+            </div>
+            <div id="championSummary" class="compact-list"></div>
+          </div>
+
+          <div class="report-panel">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Progress</p>
+                <h2>참가자별 진행률</h2>
+              </div>
+            </div>
+            <div id="participantSummary" class="compact-list"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
