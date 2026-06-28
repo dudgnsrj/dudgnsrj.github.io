@@ -8,7 +8,7 @@ const DEMO_MODE = URL_PARAMS.has("demo");
 const ADMIN_MODE = URL_PARAMS.has("admin");
 const TOURNAMENT_PARTICIPANT_ID_PREFIX = "person-tournament-";
 const TOURNAMENT_PARTICIPANT_NAMES = new Set(["조영훈", "김병진"]);
-const ROUND_POINTS = { r32: 1, r16: 2, qf: 4, sf: 8, final: 16 };
+const ROUND_POINTS = { r32: 1, r16: 1, qf: 1, sf: 1, final: 5 };
 
 const TEAMS = {
   MEX: { ko: "멕시코", en: "Mexico", rank: 15 },
@@ -368,7 +368,7 @@ function renderScoreboard() {
   }
 
   const scored = scoredMatchCount();
-  els.scoringNote.textContent = `채점 ${scored}/${TOTAL_PICKS} · 32강 1점 · 16강 2점 · 8강 4점 · 4강 8점 · 결승 16점`;
+  els.scoringNote.textContent = `채점 ${scored}/${TOTAL_PICKS} · 경기당 1점 · 우승팀 5점`;
 
   rows.forEach((row, index) => {
     els.scoreboardList.append(
