@@ -267,6 +267,13 @@ a {
   color: #ffffff;
 }
 
+.lock-notice {
+  margin: -2px 0 0;
+  color: var(--red);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
 .summary-band {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
@@ -583,6 +590,18 @@ a {
 
 .team-pick:hover:not(:disabled) {
   border-color: rgba(18, 108, 90, 0.5);
+}
+
+.team-pick.locked-pick {
+  cursor: not-allowed;
+}
+
+.team-pick.locked-pick:hover {
+  border-color: var(--line);
+}
+
+.team-pick.locked-pick.selected:hover {
+  border-color: var(--green);
 }
 
 .team-pick.selected {

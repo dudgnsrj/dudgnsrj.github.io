@@ -9,6 +9,7 @@ const ADMIN_MODE = URL_PARAMS.has("admin");
 const TOURNAMENT_PARTICIPANT_ID_PREFIX = "person-tournament-";
 const TOURNAMENT_PARTICIPANT_NAMES = new Set(["조영훈", "김병진"]);
 const ROUND_POINTS = { r32: 1, r16: 1, qf: 1, sf: 1, final: 5 };
+const PREDICTIONS_LOCKED = true;
 
 const TEAMS = {
   MEX: { ko: "멕시코", en: "Mexico", rank: 15 },
@@ -110,6 +111,7 @@ const els = {
   participantButtons: document.querySelector("#participantButtons"),
   addParticipantForm: document.querySelector("#addParticipantForm"),
   participantNameInput: document.querySelector("#participantNameInput"),
+  lockNotice: document.querySelector("#lockNotice"),
   saveStatus: document.querySelector("#saveStatus"),
   championPanel: document.querySelector("#championPanel"),
   overallPanel: document.querySelector("#overallPanel"),
@@ -152,11 +154,16 @@ async function init() {
 
 function bindEvents() {
   if (els.addParticipantForm) {
+    els.addParticipantForm.hidden = PREDICTIONS_LOCKED;
     els.addParticipantForm.addEventListener("submit", addParticipant);
+  }
+  if (els.lockNotice) {
+    els.lockNotice.hidden = !PREDICTIONS_LOCKED;
   }
   if (els.resultAdminPanel) {
     els.resultAdminPanel.hidden = !ADMIN_MODE;
   }
+  els.clearPicksBtn.hidden = PREDICTIONS_LOCKED;
   els.clearPicksBtn.addEventListener("click", clearCurrentParticipantPicks);
 }
 
@@ -525,11 +532,13 @@ function teamPickButton(match, side, teamCode) {
   const team = getTeam(teamCode);
   const count = pickCountForSide(match.id, side);
   const button = h("button", {
-    className: `team-pick${pick === side ? " selected" : ""}`,
+    className: `team-pick${pick === side ? " selected" : ""}${PREDICTIONS_LOCKED ? " locked-pick" : ""}`,
     type: "button",
     "data-match-id": match.id,
     "data-side": side,
+    "aria-disabled": PREDICTIONS_LOCKED ? "true" : "false",
     "aria-pressed": pick === side ? "true" : "false",
+    title: PREDICTIONS_LOCKED ? "대회 시작 후 예측 수정은 잠겨 있습니다." : "",
   }, [
     flagNode(teamCode),
     h("span", { className: "team-copy" }, [
@@ -539,7 +548,9 @@ function teamPickButton(match, side, teamCode) {
     h("span", { className: "pick-count", text: `${count}` }),
   ]);
 
-  button.addEventListener("click", () => chooseWinner(match.id, side));
+  if (!PREDICTIONS_LOCKED) {
+    button.addEventListener("click", () => chooseWinner(match.id, side));
+  }
   return button;
 }
 
@@ -606,6 +617,10 @@ function metricNode(value, label) {
 
 async function addParticipant(event) {
   event.preventDefault();
+  if (PREDICTIONS_LOCKED) {
+    setStatus("예측 잠김", "bad");
+    return;
+  }
   const name = els.participantNameInput.value.trim().replace(/\s+/g, " ");
   if (!name) return;
   const duplicated = state.participants.some((participant) => participant.name.toLowerCase() === name.toLowerCase());
@@ -649,6 +664,10 @@ async function addParticipant(event) {
 }
 
 async function chooseWinner(matchId, side) {
+  if (PREDICTIONS_LOCKED) {
+    setStatus("예측 잠김", "bad");
+    return;
+  }
   const participant = selectedParticipant();
   if (!participant) return;
   const match = MATCH_BY_ID.get(matchId);
@@ -718,6 +737,10 @@ async function chooseActualWinner(matchId, side) {
 }
 
 async function clearCurrentParticipantPicks() {
+  if (PREDICTIONS_LOCKED) {
+    setStatus("예측 잠김", "bad");
+    return;
+  }
   const participant = selectedParticipant();
   if (!participant) return;
   const ids = Object.keys(picksFor(participant.id));
