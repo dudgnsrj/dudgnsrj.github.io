@@ -3,9 +3,12 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_LAMJL5DR3A4gfb4vC_4nzg_BKMTvW9H
 const TOURNAMENT_PREFIX = "T";
 const STORAGE_KEY = "worldcup-tournament-picks-v1";
 const SELECTED_PLAYER_KEY = "worldcup-tournament-selected-player-v1";
-const DEMO_MODE = new URLSearchParams(window.location.search).has("demo");
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const DEMO_MODE = URL_PARAMS.has("demo");
+const ADMIN_MODE = URL_PARAMS.has("admin");
 const TOURNAMENT_PARTICIPANT_ID_PREFIX = "person-tournament-";
 const TOURNAMENT_PARTICIPANT_NAMES = new Set(["조영훈", "김병진"]);
+const ROUND_POINTS = { r32: 1, r16: 2, qf: 4, sf: 8, final: 16 };
 
 const TEAMS = {
   MEX: { ko: "멕시코", en: "Mexico", rank: 15 },
@@ -110,6 +113,10 @@ const els = {
   saveStatus: document.querySelector("#saveStatus"),
   championPanel: document.querySelector("#championPanel"),
   overallPanel: document.querySelector("#overallPanel"),
+  scoringNote: document.querySelector("#scoringNote"),
+  scoreboardList: document.querySelector("#scoreboardList"),
+  resultAdminPanel: document.querySelector("#resultAdminPanel"),
+  resultAdminList: document.querySelector("#resultAdminList"),
   roundTabs: document.querySelector("#roundTabs"),
   bracketGrid: document.querySelector("#bracketGrid"),
   championSummary: document.querySelector("#championSummary"),
@@ -122,6 +129,7 @@ const state = {
   selectedParticipantId: localStorage.getItem(SELECTED_PLAYER_KEY) || DEFAULT_PARTICIPANTS[0].id,
   activeRound: "r32",
   picks: {},
+  results: {},
   saving: false,
 };
 
@@ -145,6 +153,9 @@ async function init() {
 function bindEvents() {
   if (els.addParticipantForm) {
     els.addParticipantForm.addEventListener("submit", addParticipant);
+  }
+  if (els.resultAdminPanel) {
+    els.resultAdminPanel.hidden = !ADMIN_MODE;
   }
   els.clearPicksBtn.addEventListener("click", clearCurrentParticipantPicks);
 }
@@ -171,9 +182,10 @@ async function loadSharedState() {
     return;
   }
 
-  const [participants, predictions] = await Promise.all([
+  const [participants, predictions, results] = await Promise.all([
     supabaseRest("worldcup_participants?select=id,name,sort_order&order=sort_order.asc,created_at.asc"),
     supabaseRest("worldcup_predictions?select=participant_id,match_id,home_score,away_score"),
+    supabaseRest("worldcup_results?select=match_id,home_score,away_score"),
   ]);
 
   const tournamentParticipants = participants
@@ -184,6 +196,7 @@ async function loadSharedState() {
     ? tournamentParticipants
     : [...DEFAULT_PARTICIPANTS];
   state.picks = {};
+  state.results = {};
 
   predictions
     .filter((prediction) => prediction.match_id.startsWith(TOURNAMENT_PREFIX))
@@ -192,6 +205,14 @@ async function loadSharedState() {
       if (!side || !MATCH_BY_ID.has(prediction.match_id)) return;
       state.picks[prediction.participant_id] = state.picks[prediction.participant_id] || {};
       state.picks[prediction.participant_id][prediction.match_id] = side;
+    });
+
+  results
+    .filter((result) => result.match_id.startsWith(TOURNAMENT_PREFIX))
+    .forEach((result) => {
+      const side = decodeSide(result.home_score, result.away_score);
+      if (!side || !MATCH_BY_ID.has(result.match_id)) return;
+      state.results[result.match_id] = side;
     });
 
   saveLocalState();
@@ -209,6 +230,9 @@ function loadLocalState() {
     if (saved.picks && typeof saved.picks === "object") {
       state.picks = saved.picks;
     }
+    if (saved.results && typeof saved.results === "object") {
+      state.results = saved.results;
+    }
   } catch (error) {
     console.warn(error);
   }
@@ -218,6 +242,7 @@ function saveLocalState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     participants: state.participants,
     picks: state.picks,
+    results: state.results,
   }));
 }
 
@@ -276,6 +301,8 @@ function render() {
   renderStaticTabs();
   renderParticipants();
   renderSummary();
+  renderScoreboard();
+  renderResultAdmin();
   renderBracket();
   renderReports();
 }
@@ -322,14 +349,122 @@ function renderSummary() {
   }
 
   const completedPlayers = state.participants.filter((item) => completedCount(item.id) === TOTAL_PICKS).length;
-  const championCount = championStandings().length;
+  const scored = scoredMatchCount();
   els.overallPanel.replaceChildren(
     h("div", { className: "metric-grid" }, [
       metricNode(`${progress}/${TOTAL_PICKS}`, "내 예측 진행"),
       metricNode(`${completedPlayers}/${state.participants.length}`, "완성한 참가자"),
-      metricNode(`${championCount}`, "나온 우승 후보"),
+      metricNode(`${scored}/${TOTAL_PICKS}`, "채점된 경기"),
     ]),
   );
+}
+
+function renderScoreboard() {
+  els.scoreboardList.replaceChildren();
+  const rows = scoreboardRows();
+  if (!rows.length) {
+    els.scoreboardList.append(h("div", { className: "empty-state", text: "참가자 정보가 없어." }));
+    return;
+  }
+
+  const scored = scoredMatchCount();
+  els.scoringNote.textContent = `채점 ${scored}/${TOTAL_PICKS} · 32강 1점 · 16강 2점 · 8강 4점 · 4강 8점 · 결승 16점`;
+
+  rows.forEach((row, index) => {
+    els.scoreboardList.append(
+      h("button", {
+        className: `scoreboard-row${row.participant.id === state.selectedParticipantId ? " selected" : ""}`,
+        type: "button",
+      }, [
+        h("span", { className: "rank-chip", text: `${index + 1}` }),
+        h("span", { className: "score-name" }, [
+          h("strong", { text: row.participant.name }),
+          h("em", { text: row.champion ? `우승 ${getTeam(row.champion).ko}` : "우승팀 미정" }),
+        ]),
+        h("span", { className: "score-points" }, [
+          h("strong", { text: `${row.points}` }),
+          h("em", { text: "점" }),
+        ]),
+        h("span", { className: "score-detail", text: `${row.correct}/${scored}` }),
+      ]),
+    );
+    els.scoreboardList.lastElementChild.addEventListener("click", () => {
+      state.selectedParticipantId = row.participant.id;
+      localStorage.setItem(SELECTED_PLAYER_KEY, row.participant.id);
+      render();
+    });
+  });
+}
+
+function renderResultAdmin() {
+  if (!els.resultAdminPanel || !ADMIN_MODE) return;
+  els.resultAdminPanel.hidden = false;
+  els.resultAdminList.replaceChildren();
+  ROUND_DEFS.forEach((round) => {
+    const group = h("div", { className: "result-round" }, [
+      h("div", { className: "result-round-title" }, [
+        h("strong", { text: round.label }),
+        h("span", { text: `${ROUND_POINTS[round.id]}점` }),
+      ]),
+    ]);
+    ROUND_MATCH_ORDER[round.id].forEach((matchId) => {
+      group.append(resultAdminCard(MATCH_BY_ID.get(matchId)));
+    });
+    els.resultAdminList.append(group);
+  });
+}
+
+function resultAdminCard(match) {
+  const result = getResult(match.id);
+  const teamA = resolveActualSlot(match.slots[0]);
+  const teamB = resolveActualSlot(match.slots[1]);
+  const locked = !teamA || !teamB;
+  const winner = actualWinnerForMatch(match.id);
+  const card = h("article", {
+    className: `result-card${result ? " complete" : ""}${locked ? " locked" : ""}`,
+  });
+
+  card.append(
+    h("div", { className: "match-meta" }, [
+      h("span", { text: `M${match.no}` }),
+      h("span", { text: winner ? `승자 ${getTeam(winner).ko}` : match.time }),
+    ]),
+  );
+
+  card.append(resultPickButton(match, "a", teamA));
+  card.append(resultPickButton(match, "b", teamB));
+  return card;
+}
+
+function resultPickButton(match, side, teamCode) {
+  const result = getResult(match.id);
+  if (!teamCode) {
+    return h("button", {
+      className: "team-pick pending",
+      type: "button",
+      disabled: true,
+      text: "이전 실제 결과 대기",
+    });
+  }
+
+  const team = getTeam(teamCode);
+  const button = h("button", {
+    className: `team-pick result-pick${result === side ? " selected" : ""}`,
+    type: "button",
+    "data-result-match-id": match.id,
+    "data-side": side,
+    "aria-pressed": result === side ? "true" : "false",
+  }, [
+    flagNode(teamCode),
+    h("span", { className: "team-copy" }, [
+      h("strong", { text: team.ko }),
+      h("span", { text: `${team.en} · FIFA ${team.rank}위` }),
+    ]),
+    h("span", { className: "pick-count", text: result === side ? "승" : "" }),
+  ]);
+
+  button.addEventListener("click", () => chooseActualWinner(match.id, side));
+  return button;
 }
 
 function renderBracket() {
@@ -549,6 +684,39 @@ async function chooseWinner(matchId, side) {
   }
 }
 
+async function chooseActualWinner(matchId, side) {
+  if (!ADMIN_MODE) return;
+  const match = MATCH_BY_ID.get(matchId);
+  const team = resolveActualSlot(match.slots[side === "a" ? 0 : 1]);
+  if (!team) return;
+
+  const currentResult = getResult(matchId);
+  if (currentResult === side) return;
+
+  const downstream = descendantIds(matchId);
+  downstream.forEach((id) => delete state.results[id]);
+  state.results[matchId] = side;
+  saveLocalState();
+  render();
+
+  if (DEMO_MODE) {
+    setStatus("데모 결과 저장됨", "good");
+    return;
+  }
+
+  try {
+    setStatus("결과 저장 중");
+    await Promise.all([
+      writeResult(matchId, side),
+      ...downstream.map((id) => deleteResult(id)),
+    ]);
+    setStatus("결과 저장됨", "good");
+  } catch (error) {
+    console.error(error);
+    setStatus("결과 저장 실패", "bad");
+  }
+}
+
 async function clearCurrentParticipantPicks() {
   const participant = selectedParticipant();
   if (!participant) return;
@@ -591,8 +759,30 @@ async function deletePick(participantId, matchId) {
   });
 }
 
+async function writeResult(matchId, side) {
+  const score = encodeSide(side);
+  return supabaseRest("worldcup_results?on_conflict=match_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify({
+      match_id: matchId,
+      ...score,
+    }),
+  });
+}
+
+async function deleteResult(matchId) {
+  return supabaseRest(`worldcup_results?match_id=${eqFilter(matchId)}`, {
+    method: "DELETE",
+  });
+}
+
 function getPick(participantId, matchId) {
   return state.picks[participantId]?.[matchId] || null;
+}
+
+function getResult(matchId) {
+  return state.results[matchId] || null;
 }
 
 function isTournamentParticipant(participant) {
@@ -610,6 +800,19 @@ function winnerForMatch(matchId, participantId) {
   if (!match || !pick) return null;
   const slot = pick === "a" ? match.slots[0] : match.slots[1];
   return resolveSlot(slot, participantId);
+}
+
+function resolveActualSlot(slot) {
+  if (slot.team) return slot.team;
+  return actualWinnerForMatch(slot.from);
+}
+
+function actualWinnerForMatch(matchId) {
+  const match = MATCH_BY_ID.get(matchId);
+  const result = getResult(matchId);
+  if (!match || !result) return null;
+  const slot = result === "a" ? match.slots[0] : match.slots[1];
+  return resolveActualSlot(slot);
 }
 
 function descendantIds(matchId) {
@@ -630,6 +833,39 @@ function descendantIds(matchId) {
 
 function completedCount(participantId) {
   return Object.keys(state.picks[participantId] || {}).filter((id) => MATCH_BY_ID.has(id)).length;
+}
+
+function scoredMatchCount() {
+  return MATCHES.filter((match) => actualWinnerForMatch(match.id)).length;
+}
+
+function scoreParticipant(participant) {
+  return MATCHES.reduce((summary, match) => {
+    const actualWinner = actualWinnerForMatch(match.id);
+    if (!actualWinner) return summary;
+    summary.scored += 1;
+    const predictedWinner = winnerForMatch(match.id, participant.id);
+    if (predictedWinner === actualWinner) {
+      summary.correct += 1;
+      summary.points += ROUND_POINTS[match.round] || 0;
+    }
+    return summary;
+  }, { points: 0, correct: 0, scored: 0 });
+}
+
+function scoreboardRows() {
+  return state.participants
+    .map((participant) => ({
+      participant,
+      champion: winnerForMatch("T104", participant.id),
+      ...scoreParticipant(participant),
+    }))
+    .sort((a, b) => (
+      b.points - a.points
+      || b.correct - a.correct
+      || completedCount(b.participant.id) - completedCount(a.participant.id)
+      || a.participant.name.localeCompare(b.participant.name, "ko")
+    ));
 }
 
 function pickCountForSide(matchId, side) {

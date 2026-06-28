@@ -175,6 +175,8 @@ a {
 
 .control-band,
 .bracket-shell,
+.scoreboard-panel,
+.result-admin-panel,
 .report-panel {
   border: 1px solid rgba(217, 227, 223, 0.92);
   border-radius: var(--radius);
@@ -183,6 +185,12 @@ a {
 }
 
 .control-band {
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.scoreboard-panel,
+.result-admin-panel {
   padding: 16px;
   margin-bottom: 14px;
 }
@@ -331,6 +339,134 @@ a {
   overflow-x: auto;
   padding: 2px 0 12px;
   scrollbar-width: thin;
+}
+
+.scoreboard-list {
+  display: grid;
+  gap: 8px;
+}
+
+.scoreboard-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto 62px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  color: var(--ink);
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.scoreboard-row.selected {
+  border-color: rgba(18, 108, 90, 0.5);
+  background: var(--green-soft);
+}
+
+.rank-chip {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.score-name {
+  min-width: 0;
+}
+
+.score-name strong,
+.score-name em,
+.score-points strong,
+.score-points em {
+  display: block;
+}
+
+.score-name strong {
+  overflow: hidden;
+  font-size: 0.98rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-name em,
+.score-points em {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.score-points {
+  text-align: right;
+}
+
+.score-points strong {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.score-detail {
+  justify-self: end;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  padding: 5px 8px;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.result-admin-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.result-round {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.result-round-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 9px 10px;
+}
+
+.result-round-title strong {
+  font-size: 0.9rem;
+}
+
+.result-round-title span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+.result-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 9px;
+}
+
+.result-card.complete {
+  border-color: rgba(18, 108, 90, 0.45);
+  background: linear-gradient(180deg, #ffffff, #f2faf6);
 }
 
 .round-tab {
@@ -602,6 +738,10 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .result-admin-list {
+    grid-template-columns: 1fr;
+  }
+
   .metric-grid {
     grid-template-columns: 1fr;
   }
@@ -641,6 +781,8 @@ a {
 
   .control-band,
   .bracket-shell,
+  .scoreboard-panel,
+  .result-admin-panel,
   .report-panel,
   .champion-panel,
   .overall-panel {
@@ -667,5 +809,14 @@ a {
 
   .team-copy strong {
     white-space: normal;
+  }
+
+  .scoreboard-row {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+  }
+
+  .score-detail {
+    grid-column: 2 / -1;
+    justify-self: start;
   }
 }
