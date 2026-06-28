@@ -4,6 +4,7 @@ const TOURNAMENT_PREFIX = "T";
 const STORAGE_KEY = "worldcup-tournament-picks-v1";
 const SELECTED_PLAYER_KEY = "worldcup-tournament-selected-player-v1";
 const DEMO_MODE = new URLSearchParams(window.location.search).has("demo");
+const TOURNAMENT_PARTICIPANT_NAMES = new Set(["조영훈", "김병진"]);
 
 const TEAMS = {
   MEX: { ko: "멕시코", en: "Mexico", rank: 15 },
@@ -95,8 +96,7 @@ const ROUND_MATCH_ORDER = {
 
 const DEFAULT_PARTICIPANTS = [
   { id: "person-cho-younghun", name: "조영훈" },
-  { id: "person-cho-sihun", name: "조시훈" },
-  { id: "person-kim-hyunsung", name: "김현성" },
+  { id: "person-49f553c0-01c1-495a-9112-06c62e09df40", name: "김병진" },
 ];
 
 const MATCH_BY_ID = new Map(MATCHES.map((match) => [match.id, match]));
@@ -142,7 +142,10 @@ async function init() {
 }
 
 function bindEvents() {
-  els.addParticipantForm.addEventListener("submit", addParticipant);
+  if (els.addParticipantForm) {
+    els.addParticipantForm.hidden = true;
+    els.addParticipantForm.addEventListener("submit", addParticipant);
+  }
   els.clearPicksBtn.addEventListener("click", clearCurrentParticipantPicks);
 }
 
@@ -173,8 +176,12 @@ async function loadSharedState() {
     supabaseRest("worldcup_predictions?select=participant_id,match_id,home_score,away_score"),
   ]);
 
-  state.participants = participants.length
-    ? participants.map((participant) => ({ id: participant.id, name: participant.name }))
+  const tournamentParticipants = participants
+    .map((participant) => ({ id: participant.id, name: participant.name }))
+    .filter((participant) => TOURNAMENT_PARTICIPANT_NAMES.has(participant.name));
+
+  state.participants = tournamentParticipants.length
+    ? tournamentParticipants
     : [...DEFAULT_PARTICIPANTS];
   state.picks = {};
 
@@ -196,7 +203,8 @@ function loadLocalState() {
   try {
     const saved = JSON.parse(raw);
     if (Array.isArray(saved.participants) && saved.participants.length) {
-      state.participants = saved.participants;
+      const tournamentParticipants = saved.participants.filter((participant) => TOURNAMENT_PARTICIPANT_NAMES.has(participant.name));
+      state.participants = tournamentParticipants.length ? tournamentParticipants : [...DEFAULT_PARTICIPANTS];
     }
     if (saved.picks && typeof saved.picks === "object") {
       state.picks = saved.picks;
