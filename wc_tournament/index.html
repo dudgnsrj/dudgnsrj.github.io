@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>월드컵 승부의신 32강 토너먼트</title>
-    <link rel="stylesheet" href="./styles.css?v=20260629-prediction-lock" />
-    <script defer src="./app.js?v=20260629-prediction-lock"></script>
+    <link rel="stylesheet" href="./styles.css?v=20260629-progress-tree" />
+    <script defer src="./app.js?v=20260629-progress-tree"></script>
   </head>
   <body>
     <div class="app-shell">
@@ -53,6 +53,19 @@
             <p id="scoringNote" class="save-status">경기당 1점 · 우승팀 5점</p>
           </div>
           <div id="scoreboardList" class="scoreboard-list"></div>
+        </section>
+
+        <section class="progress-tree-panel" aria-labelledby="progressTreeTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Live Bracket</p>
+              <h2 id="progressTreeTitle">진행 트리</h2>
+            </div>
+            <p id="progressTreeNote" class="save-status">실제 결과 기준</p>
+          </div>
+          <div class="progress-tree-scroll" tabindex="0">
+            <div id="progressTree" class="progress-tree"></div>
+          </div>
         </section>
 
         <section id="resultAdminPanel" class="result-admin-panel" aria-labelledby="resultAdminTitle" hidden>

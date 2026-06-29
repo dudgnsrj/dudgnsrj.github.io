@@ -106,6 +106,13 @@ const DEFAULT_PARTICIPANTS = [
 
 const MATCH_BY_ID = new Map(MATCHES.map((match) => [match.id, match]));
 const TOTAL_PICKS = MATCHES.length;
+const PROGRESS_LAYOUT = {
+  r32: { column: 1, span: 2 },
+  r16: { column: 2, span: 4 },
+  qf: { column: 3, span: 8 },
+  sf: { column: 4, span: 16 },
+  final: { column: 5, span: 32 },
+};
 
 const els = {
   participantButtons: document.querySelector("#participantButtons"),
@@ -117,6 +124,8 @@ const els = {
   overallPanel: document.querySelector("#overallPanel"),
   scoringNote: document.querySelector("#scoringNote"),
   scoreboardList: document.querySelector("#scoreboardList"),
+  progressTree: document.querySelector("#progressTree"),
+  progressTreeNote: document.querySelector("#progressTreeNote"),
   resultAdminPanel: document.querySelector("#resultAdminPanel"),
   resultAdminList: document.querySelector("#resultAdminList"),
   roundTabs: document.querySelector("#roundTabs"),
@@ -309,6 +318,7 @@ function render() {
   renderParticipants();
   renderSummary();
   renderScoreboard();
+  renderProgressTree();
   renderResultAdmin();
   renderBracket();
   renderReports();
@@ -419,6 +429,69 @@ function renderResultAdmin() {
     });
     els.resultAdminList.append(group);
   });
+}
+
+function renderProgressTree() {
+  if (!els.progressTree) return;
+  const scored = scoredMatchCount();
+  els.progressTree.replaceChildren();
+  els.progressTree.style.gridTemplateRows = "repeat(32, 22px)";
+  els.progressTreeNote.textContent = `실제 결과 기준 · ${scored}/${TOTAL_PICKS}경기 완료`;
+
+  ROUND_DEFS.forEach((round) => {
+    const layout = PROGRESS_LAYOUT[round.id];
+    ROUND_MATCH_ORDER[round.id].forEach((matchId, index) => {
+      const match = MATCH_BY_ID.get(matchId);
+      const start = 1 + (index * layout.span);
+      els.progressTree.append(progressNode(match, round, {
+        column: layout.column,
+        rowStart: start,
+        rowSpan: layout.span,
+      }));
+    });
+  });
+}
+
+function progressNode(match, round, position) {
+  const teamA = resolveActualSlot(match.slots[0]);
+  const teamB = resolveActualSlot(match.slots[1]);
+  const result = getResult(match.id);
+  const winner = actualWinnerForMatch(match.id);
+  const waiting = !teamA || !teamB;
+  const node = h("article", {
+    className: `progress-node round-${round.id}${winner ? " complete" : ""}${waiting ? " waiting" : ""}`,
+    style: `grid-column: ${position.column}; grid-row: ${position.rowStart} / span ${position.rowSpan};`,
+  });
+
+  node.append(
+    h("div", { className: "progress-meta" }, [
+      h("span", { text: `M${match.no}` }),
+      h("span", { text: round.label }),
+    ]),
+  );
+  node.append(progressTeam(teamA, result === "a", result && result !== "a"));
+  node.append(progressTeam(teamB, result === "b", result && result !== "b"));
+  return node;
+}
+
+function progressTeam(teamCode, isWinner, isEliminated) {
+  if (!teamCode) {
+    return h("div", { className: "progress-team pending" }, [
+      h("span", { className: "progress-placeholder", text: "대기" }),
+    ]);
+  }
+
+  const team = getTeam(teamCode);
+  return h("div", {
+    className: `progress-team${isWinner ? " winner" : ""}${isEliminated ? " eliminated" : ""}`,
+  }, [
+    flagNode(teamCode),
+    h("span", { className: "progress-team-copy" }, [
+      h("strong", { text: team.ko }),
+      h("em", { text: `FIFA ${team.rank}` }),
+    ]),
+    isWinner ? h("span", { className: "winner-mark", text: "승" }) : null,
+  ]);
 }
 
 function resultAdminCard(match) {
@@ -941,6 +1014,8 @@ function h(tag, props = {}, children = []) {
       element.className = value;
     } else if (key === "text") {
       element.textContent = value;
+    } else if (key === "style") {
+      element.setAttribute("style", value);
     } else if (key in element && key !== "role") {
       element[key] = value;
     } else {

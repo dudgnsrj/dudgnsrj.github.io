@@ -176,6 +176,7 @@ a {
 .control-band,
 .bracket-shell,
 .scoreboard-panel,
+.progress-tree-panel,
 .result-admin-panel,
 .report-panel {
   border: 1px solid rgba(217, 227, 223, 0.92);
@@ -190,6 +191,7 @@ a {
 }
 
 .scoreboard-panel,
+.progress-tree-panel,
 .result-admin-panel {
   padding: 16px;
   margin-bottom: 14px;
@@ -474,6 +476,149 @@ a {
 .result-card.complete {
   border-color: rgba(18, 108, 90, 0.45);
   background: linear-gradient(180deg, #ffffff, #f2faf6);
+}
+
+.progress-tree-scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+
+.progress-tree {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 218px);
+  grid-auto-flow: column;
+  gap: 4px 18px;
+  min-width: 1120px;
+}
+
+.progress-node {
+  position: relative;
+  align-self: center;
+  z-index: 1;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 7px;
+  box-shadow: 0 10px 24px rgba(29, 45, 39, 0.08);
+}
+
+.progress-node::before,
+.progress-node::after {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 2px;
+  background: var(--line-strong);
+  content: "";
+}
+
+.progress-node::before {
+  left: -19px;
+}
+
+.progress-node::after {
+  right: -19px;
+}
+
+.progress-node.round-r32::before,
+.progress-node.round-final::after {
+  display: none;
+}
+
+.progress-node.complete {
+  border-color: rgba(18, 108, 90, 0.45);
+  background: linear-gradient(180deg, #ffffff, #f2faf6);
+}
+
+.progress-node.complete::before,
+.progress-node.complete::after {
+  background: rgba(18, 108, 90, 0.6);
+}
+
+.progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.progress-team {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  margin-top: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  padding: 4px 6px;
+}
+
+.progress-team .flag-frame {
+  width: 26px;
+  height: 26px;
+}
+
+.progress-team-copy {
+  min-width: 0;
+}
+
+.progress-team-copy strong,
+.progress-team-copy em {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-team-copy strong {
+  font-size: 0.78rem;
+}
+
+.progress-team-copy em {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.progress-team.winner {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+
+.progress-team.eliminated {
+  opacity: 0.55;
+}
+
+.winner-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.progress-team.pending {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  color: var(--muted);
+}
+
+.progress-placeholder {
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .round-tab {
@@ -801,6 +946,7 @@ a {
   .control-band,
   .bracket-shell,
   .scoreboard-panel,
+  .progress-tree-panel,
   .result-admin-panel,
   .report-panel,
   .champion-panel,
