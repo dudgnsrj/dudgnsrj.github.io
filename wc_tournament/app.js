@@ -107,11 +107,11 @@ const DEFAULT_PARTICIPANTS = [
 const MATCH_BY_ID = new Map(MATCHES.map((match) => [match.id, match]));
 const TOTAL_PICKS = MATCHES.length;
 const PROGRESS_LAYOUT = {
-  r32: { column: 1, span: 2 },
-  r16: { column: 2, span: 4 },
-  qf: { column: 3, span: 8 },
-  sf: { column: 4, span: 16 },
-  final: { column: 5, span: 32 },
+  r32: { column: 1, span: 1 },
+  r16: { column: 2, span: 2 },
+  qf: { column: 3, span: 4 },
+  sf: { column: 4, span: 8 },
+  final: { column: 5, span: 16 },
 };
 
 const els = {
@@ -435,7 +435,7 @@ function renderProgressTree() {
   if (!els.progressTree) return;
   const scored = scoredMatchCount();
   els.progressTree.replaceChildren();
-  els.progressTree.style.gridTemplateRows = "repeat(32, 22px)";
+  els.progressTree.style.gridTemplateRows = "repeat(16, 90px)";
   els.progressTreeNote.textContent = `실제 결과 기준 · ${scored}/${TOTAL_PICKS}경기 완료`;
 
   ROUND_DEFS.forEach((round) => {
