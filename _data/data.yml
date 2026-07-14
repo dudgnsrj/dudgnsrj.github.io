@@ -92,35 +92,40 @@ publications:
     intro: |
       The following are the papers I have participated in. They are sorted in time order.
     papers:
+      - title: 'SIO-Mapper: A framework for lane-level hd map construction using satellite images and openstreetmap with no on-site visits'
+        link: https://www.sciencedirect.com/science/article/pii/S2667393226000219
+        authors: Younghun Cho and Jee-Hwan Ryu
+        conference: ISPRS Open Journal of Photogrammetry and Remote Sensing, 2026
+        
       - title: 'STheReO: Stereo Thermal Dataset for Research in Odometry and Mapping'
         link: https://ieeexplore.ieee.org/document/9981857
         authors: Seungsang Yun, Minwoo Jung, Jeongyun Kim, Sangwoo Jung, Younghun Cho, Myung-Hwan Jeon, Giseop Kim, and Ayoung Kim
-        conference:  IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2022
+        conference: IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2022
         
       - title: OpenStreetMap-based LiDAR Global Localization in Urban Environment without a Prior LiDAR Map
         link: https://ieeexplore.ieee.org/abstract/document/9716862
         authors: Younghun Cho, Giseop Kim, Sang-min Lee, and Jee-Hwan Ryu
-        conference:  IEEE Robotics and Automation Letters, 2022 (with ICRA 2022)
+        conference: IEEE Robotics and Automation Letters, 2022 (with ICRA 2022)
         
       - title: RL-based Path Planning for SLAM Uncertainty Minimization in Urban Mapping
         link: https://www.koreascience.or.kr/article/JAKO202117242224848.page
         authors: Younghun Cho and Ayoung Kim
-        conference:  The Journal of Korea Robotics Society, 2021
+        conference: The Journal of Korea Robotics Society, 2021
         
       - title: 'Mulran: Multimodal range dataset for urban place recognition'
         link: https://ieeexplore.ieee.org/abstract/document/9197298
         authors: Giseop Kim, Yeong Sang Park, Younghun Cho, Jinyong Jeong, and Ayoung Kim
-        conference:  IEEE International Conference on Robotics and Automation (ICRA), 2020
+        conference: IEEE International Conference on Robotics and Automation (ICRA), 2020
         
       - title: Path Pre-planning Optimizing SLAM Uncertainty using Reinforcement Learning
         link: https://koasas.kaist.ac.kr/handle/10203/283947
         authors: Advised by Prof. Ayoung Kim
-        conference:  M.S. Thesis (Civil and Environmental Engineering, KAIST), 2020
+        conference: M.S. Thesis (Civil and Environmental Engineering, KAIST), 2020
         
       - title: The road is enough! Extrinsic calibration of non-overlapping stereo camera and LiDAR using road information
         link: https://ieeexplore.ieee.org/abstract/document/8736758
         authors: Jinyong Jeong, Younghun Cho, and Ayoung Kim
-        conference:  IEEE Robotics and Automation Letters, 2019
+        conference: IEEE Robotics and Automation Letters, 2019
         
 services:
     title: Services
