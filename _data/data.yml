@@ -12,7 +12,7 @@ sidebar:
     avatar: profile.png  #place a 100x100 picture inside /assets/images/ folder and provide the name of the file below
 
     # Sidebar links
-    email: dudgnsrj@kaist.ac.kr
+    email: younghuncho@kimm.re.kr
     phone: 
     citizenship: 
     website: url.kr/g6fpts #do not add http://
@@ -32,7 +32,6 @@ career-profile:
     title: Profile
     summary: |
       I obtained a Ph.D. at IRiS Lab., KAIST advised by Prof. Jee-Hwan Ryu. I obtained an M.S.(2020) at IRAP Lab., KAIST (currently RPM Robotics Lab in SNU) advised by Prof. Ayoung Kim.
-      My research topic focuses on the localization of autonomous vehicles without the usage of HD maps.
               
 education:
     - degree: Ph.D. in Civil and Environmental Engineering
@@ -72,7 +71,11 @@ education:
 experiences:
     - role: Post Doctoral Researcher
       time: 2024 - current
-      company: Dept. of Industrial Machinery DX, Korea Institute of Machinery and Material (KIMM)     
+      company: Dept. of Industrial Machinery DX, Korea Institute of Machinery and Material (KIMM)  
+
+    - role: Next Generation committee Member
+      time: 2026 - current
+      company: Korea Foundation for Women In Science, Engineering and Technology (WISET)
       
     - role: Team Leader
       time: 2022
