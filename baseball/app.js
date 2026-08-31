@@ -2,20 +2,20 @@ const players = {
   yunjae: {
     id: 'yunjae', name: '윤재', initial: 'Y', number: '01', role: '투수 · 타자', color: 'yunjae',
     batting: { G: 2, PA: 107, AB: 102, R: 14, H: 34, '2B': 4, HR: 4, RBI: 14, BB: 0, HBP: 5, SO: 24, AVG: '.333', OBP: '.364', SLG: '.490', OPS: '.854' },
-    pitching: { G: 2, W: 1, L: 0, T: 1, IP: '18.0', H: 25, R: 9, ER: 9, BB: 8, SO: 2, HR: 1, ERA: '4.50', WHIP: '1.83' }
+    pitching: { G: 2, W: 1, L: 0, T: 1, IP: '12.0', H: 25, R: 9, ER: 9, BB: 8, SO: 2, HR: 1, ERA: '6.75', WHIP: '2.75' }
   },
   younghun: {
     id: 'younghun', name: '영훈', initial: 'H', number: '02', role: '투수 · 타자', color: 'younghun',
     batting: { G: 2, PA: 67, AB: 59, R: 9, H: 25, '2B': 4, HR: 1, RBI: 9, BB: 8, HBP: 0, SO: 2, AVG: '.424', OBP: '.493', SLG: '.542', OPS: '1.035' },
-    pitching: { G: 2, W: 0, L: 1, T: 1, IP: '18.0', H: 34, R: 14, ER: 14, BB: 0, SO: 24, HR: 4, ERA: '7.00', WHIP: '1.89' }
+    pitching: { G: 2, W: 0, L: 1, T: 1, IP: '24.0', H: 34, R: 14, ER: 14, BB: 0, SO: 24, HR: 4, ERA: '5.25', WHIP: '1.42' }
   }
 };
 
 const games = [
   {
     id: '20260823-01', date: '2026-08-23', label: '8월 23일 일요일', no: 'GAME 01', innings: 9,
-    away: { player: 'yunjae', runs: [1,1,0,2,0,1,0,1,3], R: 9, H: 18, E: 0, batting: { AB:51,R:9,H:18,'2B':2,HR:3,RBI:9,BB:0,HBP:2,SO:13 }, pitching: { IP:'9.0',H:12,R:4,ER:4,BB:3,SO:2,HR:0 } },
-    home: { player: 'younghun', runs: [0,0,0,0,2,0,2,0,0], R: 4, H: 12, E: 0, batting: { AB:30,R:4,H:12,'2B':2,HR:0,RBI:4,BB:3,HBP:0,SO:2 }, pitching: { IP:'9.0',H:18,R:9,ER:9,BB:0,SO:13,HR:3 } },
+    away: { player: 'yunjae', runs: [1,1,0,2,0,1,0,1,3], R: 9, H: 18, E: 0, batting: { AB:51,R:9,H:18,'2B':2,HR:3,RBI:9,BB:0,HBP:2,SO:13 }, pitching: { IP:'6.0',H:12,R:4,ER:4,BB:3,SO:2,HR:0 } },
+    home: { player: 'younghun', runs: [0,0,0,0,2,0,2,0,0], R: 4, H: 12, E: 0, batting: { AB:30,R:4,H:12,'2B':2,HR:0,RBI:4,BB:3,HBP:0,SO:2 }, pitching: { IP:'12.0',H:18,R:9,ER:9,BB:0,SO:13,HR:3 } },
     note: '윤재가 1회 선두 홈런으로 앞서간 뒤 4회와 9회 홈런을 더해 첫 승을 기록했습니다.',
     plays: [
       ['1회','윤재','홈런(1–0) · 삼진 · 안타 · 삼진 · 뜬공 · 직선타'],['1회','영훈','안타 · 파울플라이 · 안타 · 뜬공'],
@@ -31,8 +31,8 @@ const games = [
   },
   {
     id: '20260830-02', date: '2026-08-30', label: '8월 30일 일요일', no: 'GAME 02', innings: 9,
-    away: { player: 'yunjae', runs: [1,0,0,1,0,1,2,0,0], R: 5, H: 16, E: 0, batting: { AB:51,R:5,H:16,'2B':2,HR:1,RBI:5,BB:0,HBP:3,SO:11 }, pitching: { IP:'9.0',H:13,R:5,ER:5,BB:5,SO:0,HR:1 } },
-    home: { player: 'younghun', runs: [0,0,0,2,3,0,0,0,0], R: 5, H: 13, E: 0, batting: { AB:29,R:5,H:13,'2B':2,HR:1,RBI:5,BB:5,HBP:0,SO:0 }, pitching: { IP:'9.0',H:16,R:5,ER:5,BB:0,SO:11,HR:1 } },
+    away: { player: 'yunjae', runs: [1,0,0,1,0,1,2,0,0], R: 5, H: 16, E: 0, batting: { AB:51,R:5,H:16,'2B':2,HR:1,RBI:5,BB:0,HBP:3,SO:11 }, pitching: { IP:'6.0',H:13,R:5,ER:5,BB:5,SO:0,HR:1 } },
+    home: { player: 'younghun', runs: [0,0,0,2,3,0,0,0,0], R: 5, H: 13, E: 0, batting: { AB:29,R:5,H:13,'2B':2,HR:1,RBI:5,BB:5,HBP:0,SO:0 }, pitching: { IP:'12.0',H:16,R:5,ER:5,BB:0,SO:11,HR:1 } },
     note: '영훈이 5회 5–2로 앞섰지만 윤재가 6·7회 추격해 5–5 동점을 만들었습니다.',
     plays: [
       ['1회','윤재','삼진 · 2루타 · 땅볼(주자 3루) · 땅볼(1–0) · 2루타 · 뜬공'],['1회','영훈','안타 · 뜬공 · 안타 · 땅볼'],
@@ -85,7 +85,7 @@ function renderGame(id) {
     <div class="detail-grid"><div>
       <section class="panel"><h2 class="panel-title">타자 기록</h2>${boxTable(g,'batting',['AB','R','H','2B','HR','RBI','BB','HBP','SO'])}</section>
       <section class="panel" style="margin-top:22px"><h2 class="panel-title">투수 기록</h2>${boxTable(g,'pitching',['IP','H','R','ER','BB','SO','HR'])}</section>
-      <section class="panel" style="margin-top:22px"><h2 class="panel-title">경기 메모</h2><div class="rules"><p><strong>${g.note}</strong></p><p>가족 리그 특별 규칙: 윤재 공격은 이닝당 4아웃, 영훈 공격은 이닝당 2아웃으로 진행했습니다. 투수 IP는 실제 진행한 경기 이닝 기준입니다.</p></div></section>
+      <section class="panel" style="margin-top:22px"><h2 class="panel-title">경기 메모</h2><div class="rules"><p><strong>${g.note}</strong></p><p>가족 리그 특별 규칙: 윤재 공격은 이닝당 4아웃, 영훈 공격은 이닝당 2아웃으로 진행했습니다. 투수 IP는 전체 아웃카운트를 표준 3아웃제 이닝으로 환산했습니다.</p></div></section>
     </div><aside class="panel"><h2 class="panel-title">플레이 기록</h2><div class="play-list">${g.plays.map(p=>`<div class="inning"><div class="inning-head"><strong>${p[0]} ${p[1]} 공격</strong><span>${p[1]==='윤재'?'초':'말'}</span></div><p>${p[2]}</p></div>`).join('')}</div></aside></div>
   </section>`;
   setActive('schedule');
