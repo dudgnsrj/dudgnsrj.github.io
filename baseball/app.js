@@ -1,13 +1,11 @@
 const players = {
   yunjae: {
     id: 'yunjae', name: '윤재', initial: 'Y', number: '01', role: '투수 · 타자', color: 'yunjae',
-    batting: { G: 2, PA: 107, AB: 102, R: 14, H: 34, '2B': 4, HR: 4, RBI: 14, BB: 0, HBP: 5, SO: 24, AVG: '.333', OBP: '.364', SLG: '.490', OPS: '.854' },
-    pitching: { G: 2, W: 1, L: 0, T: 1, IP: '12.0', H: 25, R: 9, ER: 9, BB: 8, SO: 2, HR: 1, ERA: '6.75', WHIP: '2.75' }
+    batting: {}, pitching: {}
   },
   younghun: {
     id: 'younghun', name: '영훈', initial: 'H', number: '02', role: '투수 · 타자', color: 'younghun',
-    batting: { G: 2, PA: 67, AB: 59, R: 9, H: 25, '2B': 4, HR: 1, RBI: 9, BB: 8, HBP: 0, SO: 2, AVG: '.424', OBP: '.493', SLG: '.542', OPS: '1.035' },
-    pitching: { G: 2, W: 0, L: 1, T: 1, IP: '24.0', H: 34, R: 14, ER: 14, BB: 0, SO: 24, HR: 4, ERA: '5.25', WHIP: '1.42' }
+    batting: {}, pitching: {}
   }
 };
 
@@ -45,11 +43,57 @@ const games = [
       ['8회','윤재','땅볼 · 땅볼 · 땅볼 · 안타 · 땅볼'],['8회','영훈','뜬공 · 안타 · 땅볼'],
       ['9회','윤재','안타 · 삼진 · 땅볼(주자 2루) · 삼진 · 땅볼'],['9회','영훈','뜬공 · 땅볼']
     ]
+  },
+  {
+    id: '20260906-03', date: '2026-09-06', label: '9월 6일 일요일', no: 'GAME 03', innings: 5,
+    away: { player: 'younghun', runs: [0,0,0,0,0], R: 0, H: 5, E: 1, batting: { AB:15,R:0,H:5,'2B':1,HR:0,RBI:0,BB:5,HBP:0,SO:2 }, pitching: { IP:'6.1',H:7,R:1,ER:0,BB:0,SO:7,HR:0 } },
+    home: { player: 'yunjae', runs: [0,0,0,0,1], R: 1, H: 7, E: 0, batting: { AB:27,R:1,H:7,'2B':0,HR:0,RBI:1,BB:0,HBP:1,SO:7 }, pitching: { IP:'3.1',H:5,R:0,ER:0,BB:5,SO:2,HR:0 } },
+    note: '5이닝제 경기. 윤재가 5회말 끝내기 안타로 1–0 승리를 기록했습니다. 윤재는 10아웃(3.1 IP), 영훈은 끝내기 시점까지 19아웃(6.1 IP)을 잡았습니다. 5회말 실책 출루를 아웃으로 복원하면 결승타 전에 4아웃이 되므로 영훈의 1실점은 비자책점입니다.',
+    plays: [
+      ['1회','영훈','뜬공 · 땅볼'],['1회','윤재','땅볼 · 땅볼 · 안타 · 폭투로 2루 진출 · 땅볼 · 삼진'],
+      ['2회','영훈','볼넷 · 안타 · 볼넷 · 뜬공 · 삼진'],['2회','윤재','땅볼 · 땅볼 · 안타 · 삼진 · 삼진'],
+      ['3회','영훈','안타 · 파울플라이 · 볼넷 · 볼넷 · 삼진'],['3회','윤재','안타 · 삼진 · 땅볼 · 삼진 · 안타 · 삼진'],
+      ['4회','영훈','안타 · 안타 · 직선타 아웃 · 땅볼'],['4회','윤재','땅볼 · 삼진 · 안타 · 땅볼 · 땅볼'],
+      ['5회','영훈','땅볼 · 볼넷 · 2루타 · 뜬공'],['5회','윤재','안타 · 실책 출루 · 땅볼 · 뜬공 · 뜬공 · 몸맞는 공 · 끝내기 안타(영훈 0–1 윤재)']
+    ]
   }
 ];
 
+// IP의 소수 부분은 십진수가 아닌 아웃 수(.1 = 1아웃, .2 = 2아웃)다.
+function inningsToOuts(ip) {
+  const [innings, outs = '0'] = String(ip).split('.');
+  return Number(innings) * 3 + Number(outs);
+}
+function outsToInnings(outs) { return `${Math.floor(outs / 3)}.${outs % 3}`; }
+function battingRate(value) { return value.toFixed(3).replace(/^0\./, '.'); }
+
+// 경기별 기록에서 통산 기록을 계산해 경기 추가와 이닝 보정이 모든 화면에 반영되도록 한다.
+for (const p of Object.values(players)) {
+  const batting = { G: 0, PA: 0, AB: 0, R: 0, H: 0, '2B': 0, '3B': 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SO: 0, SF: 0, SH: 0 };
+  const pitching = { G: 0, W: 0, L: 0, T: 0, H: 0, R: 0, ER: 0, BB: 0, SO: 0, HR: 0 };
+  let outs = 0;
+  for (const game of games) {
+    const side = game.away.player === p.id ? game.away : game.home;
+    const opponent = side === game.away ? game.home : game.away;
+    batting.G++;
+    for (const key of ['AB','R','H','2B','3B','HR','RBI','BB','HBP','SO','SF','SH']) batting[key] += side.batting[key] || 0;
+    pitching.G++;
+    pitching[side.R > opponent.R ? 'W' : side.R < opponent.R ? 'L' : 'T']++;
+    for (const key of ['H','R','ER','BB','SO','HR']) pitching[key] += side.pitching[key];
+    outs += inningsToOuts(side.pitching.IP);
+  }
+  batting.PA = batting.AB + batting.BB + batting.HBP + batting.SF + batting.SH;
+  const totalBases = batting.H + batting['2B'] + 2 * batting['3B'] + 3 * batting.HR;
+  const obp = (batting.H + batting.BB + batting.HBP) / (batting.PA - batting.SH || 1);
+  const slg = totalBases / (batting.AB || 1);
+  Object.assign(batting, { AVG: battingRate(batting.H / (batting.AB || 1)), OBP: battingRate(obp), SLG: battingRate(slg), OPS: battingRate(obp + slg) });
+  Object.assign(pitching, { IP: outsToInnings(outs), ERA: outs ? (pitching.ER * 27 / outs).toFixed(2) : '—', WHIP: outs ? ((pitching.H + pitching.BB) * 3 / outs).toFixed(2) : '—' });
+  p.batting = batting;
+  p.pitching = pitching;
+}
+
 const app = document.querySelector('#app');
-let selectedDate = '2026-08-30';
+let selectedDate = games[games.length - 1].date;
 let recordMode = 'batting';
 
 const route = (name, id = '') => { location.hash = id ? `${name}/${id}` : name; };
@@ -62,7 +106,7 @@ function renderSchedule() {
     <p class="eyebrow">FAMILY LEAGUE · 2026 SEASON</p><h1>경기 일정과 결과</h1><p class="subhead">우리 가족이 함께한 모든 경기를 한곳에 기록합니다.</p>
     <div class="date-bar"><button class="date-arrow" data-date-step="-1" aria-label="이전 경기">‹</button><div class="date-title">${formatDate(selectedDate)}<span>GAME DAY</span></div><button class="date-arrow" data-date-step="1" aria-label="다음 경기">›</button></div>
     ${onDate.length ? `<div class="game-list">${onDate.map(gameCard).join('')}</div>` : '<div class="date-empty">이 날짜에는 기록된 경기가 없습니다.</div>'}
-    <div class="summary-strip"><div class="summary-stat"><strong>2</strong><span>총 경기</span></div><div class="summary-stat"><strong>1–0–1</strong><span>윤재 승–패–무</span></div><div class="summary-stat"><strong>23</strong><span>두 선수 총 득점</span></div></div>
+    <div class="summary-strip"><div class="summary-stat"><strong>${games.length}</strong><span>총 경기</span></div><div class="summary-stat"><strong>${players.yunjae.pitching.W}–${players.yunjae.pitching.L}–${players.yunjae.pitching.T}</strong><span>윤재 승–패–무</span></div><div class="summary-stat"><strong>${games.reduce((total, g) => total + g.away.R + g.home.R, 0)}</strong><span>두 선수 총 득점</span></div></div>
   </section>`;
   setActive('schedule');
 }
@@ -86,7 +130,7 @@ function renderGame(id) {
       <section class="panel"><h2 class="panel-title">타자 기록</h2>${boxTable(g,'batting',['AB','R','H','2B','HR','RBI','BB','HBP','SO'])}</section>
       <section class="panel" style="margin-top:22px"><h2 class="panel-title">투수 기록</h2>${boxTable(g,'pitching',['IP','H','R','ER','BB','SO','HR'])}</section>
       <section class="panel" style="margin-top:22px"><h2 class="panel-title">경기 메모</h2><div class="rules"><p><strong>${g.note}</strong></p><p>가족 리그 특별 규칙: 윤재 공격은 이닝당 4아웃, 영훈 공격은 이닝당 2아웃으로 진행했습니다. 투수 IP는 전체 아웃카운트를 표준 3아웃제 이닝으로 환산했습니다.</p></div></section>
-    </div><aside class="panel"><h2 class="panel-title">플레이 기록</h2><div class="play-list">${g.plays.map(p=>`<div class="inning"><div class="inning-head"><strong>${p[0]} ${p[1]} 공격</strong><span>${p[1]==='윤재'?'초':'말'}</span></div><p>${p[2]}</p></div>`).join('')}</div></aside></div>
+    </div><aside class="panel"><h2 class="panel-title">플레이 기록</h2><div class="play-list">${g.plays.map(p=>`<div class="inning"><div class="inning-head"><strong>${p[0]} ${p[1]} 공격</strong><span>${p[1]===a.name?'초':'말'}</span></div><p>${p[2]}</p></div>`).join('')}</div></aside></div>
   </section>`;
   setActive('schedule');
 }
