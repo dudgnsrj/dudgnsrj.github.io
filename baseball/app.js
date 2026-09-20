@@ -1,11 +1,11 @@
 const players = {
   yunjae: {
     id: 'yunjae', name: '윤재', initial: 'Y', number: '01', role: '투수 · 타자', color: 'yunjae',
-    batting: {}, pitching: {}
+    handedness: '우투우타', batting: {}, pitching: {}
   },
   younghun: {
     id: 'younghun', name: '영훈', initial: 'H', number: '02', role: '투수 · 타자', color: 'younghun',
-    batting: {}, pitching: {}
+    handedness: '양손 투구 · 좌타', batting: {}, pitching: {}
   }
 };
 
@@ -56,6 +56,28 @@ const games = [
       ['4회','영훈','안타 · 안타 · 직선타 아웃 · 땅볼'],['4회','윤재','땅볼 · 삼진 · 안타 · 땅볼 · 땅볼'],
       ['5회','영훈','땅볼 · 볼넷 · 2루타 · 뜬공'],['5회','윤재','안타 · 실책 출루 · 땅볼 · 뜬공 · 뜬공 · 몸맞는 공 · 끝내기 안타(영훈 0–1 윤재)']
     ]
+  },
+  {
+    id: '20260920-04', date: '2026-09-20', label: '9월 20일 일요일', no: 'GAME 04', innings: 5,
+    away: { player: 'yunjae', runs: [0,0,1,1,2], R: 4, H: 9, E: 0, batting: { AB:30,R:4,H:9,'2B':1,HR:0,RBI:4,BB:1,HBP:2,SO:7 }, pitching: { IP:'3.1',H:4,R:3,ER:3,BB:2,SO:0,HR:1 } },
+    home: {
+      player: 'younghun', runs: [0,0,0,3,0], R: 3, H: 4, E: 1,
+      batting: { AB:14,R:3,H:4,'2B':0,HR:1,RBI:3,BB:2,HBP:0,SO:0 },
+      pitching: { IP:'6.2',H:9,R:4,ER:3,BB:1,SO:7,HR:0 },
+      pitchingStints: [
+        { hand:'R', stint:'1회초~3회초 적시타까지', IP:'3.2',H:4,R:1,ER:0,BB:0,HBP:1,SO:4,HR:0 },
+        { hand:'L', stint:'3회초 마지막 삼진~4회초', IP:'1.2',H:3,R:1,ER:1,BB:0,HBP:0,SO:2,HR:0 },
+        { hand:'R', stint:'5회초', IP:'1.1',H:2,R:2,ER:2,BB:1,HBP:1,SO:1,HR:0 }
+      ]
+    },
+    note: '5이닝제 경기. 영훈이 4회말 3점 홈런으로 역전했지만 윤재가 5회초 2득점해 4–3으로 승리했습니다. 영훈은 3회초 적시타 직후 좌완으로 전환했고, 5회초부터 다시 우완으로 던졌습니다. 우완 15아웃(5.0 IP), 좌완 5아웃(1.2 IP)입니다. 3회초 실책을 아웃으로 복원하면 적시타 전에 4아웃이 되므로 우완의 1실점은 비자책점으로 처리했습니다.',
+    plays: [
+      ['1회','윤재','땅볼 · 땅볼 · 땅볼 · 삼진'],['1회','영훈','땅볼 · 땅볼'],
+      ['2회','윤재','안타 · 삼진 · 땅볼 · 사구 · 안타 · 삼진 · 땅볼'],['2회','영훈','땅볼 · 안타 · 볼넷 · 내야뜬공'],
+      ['3회','윤재','땅볼 · 땅볼 · 2루타 · 실책 출루 · 삼진 · 안타(윤재 1–0 영훈) · 영훈 좌완 전환 · 삼진'],['3회','영훈','땅볼 · 뜬공'],
+      ['4회','윤재','안타 · 삼진 · 땅볼(주자 2루) · 안타 · 안타(윤재 2–0 영훈) · 뜬공 · 땅볼'],['4회','영훈','볼넷 · 안타 · 땅볼 · 홈런(윤재 2–3 영훈) · 땅볼'],
+      ['5회','윤재','영훈 우완 전환 · 뜬공 · 내야안타 · 볼넷 · 폭투로 주자 2·3루 · 땅볼(3–3) · 사구 · 삼진 · 내야안타(윤재 4–3 영훈) · 땅볼'],['5회','영훈','안타 · 뜬공 · 뜬공']
+    ]
   }
 ];
 
@@ -67,11 +89,32 @@ function inningsToOuts(ip) {
 function outsToInnings(outs) { return `${Math.floor(outs / 3)}.${outs % 3}`; }
 function battingRate(value) { return value.toFixed(3).replace(/^0\./, '.'); }
 
+const pitchingColumns = ['IP','H','R','ER','BB','HBP','SO','HR','ERA','WHIP'];
+const handNames = { R: '우완', L: '좌완' };
+function summarizePitching(lines) {
+  const stats = { H:0, R:0, ER:0, BB:0, HBP:0, SO:0, HR:0 };
+  let outs = 0;
+  for (const line of lines) {
+    outs += inningsToOuts(line.IP);
+    for (const key of Object.keys(stats)) stats[key] += line[key] || 0;
+  }
+  return { ...stats, IP:outsToInnings(outs), ERA:outs ? (stats.ER * 27 / outs).toFixed(2) : '—', WHIP:outs ? ((stats.H + stats.BB) * 3 / outs).toFixed(2) : '—' };
+}
+function pitchingStints(side, opponent) {
+  // 이전 세 경기는 우완. 좌·우 전환이 있는 경기는 구간별 기록을 사용한다.
+  return side.pitchingStints || [{ hand:'R', ...side.pitching, HBP:opponent.batting.HBP || 0 }];
+}
+function splitPitching(stints) {
+  return ['R','L'].filter(hand => stints.some(s => s.hand === hand)).map(hand => ({ hand, ...summarizePitching(stints.filter(s => s.hand === hand)) }));
+}
+
 // 경기별 기록에서 통산 기록을 계산해 경기 추가와 이닝 보정이 모든 화면에 반영되도록 한다.
 for (const p of Object.values(players)) {
   const batting = { G: 0, PA: 0, AB: 0, R: 0, H: 0, '2B': 0, '3B': 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SO: 0, SF: 0, SH: 0 };
   const pitching = { G: 0, W: 0, L: 0, T: 0, H: 0, R: 0, ER: 0, BB: 0, SO: 0, HR: 0 };
   let outs = 0;
+  const handLines = { R: [], L: [] };
+  const handGames = { R: 0, L: 0 };
   for (const game of games) {
     const side = game.away.player === p.id ? game.away : game.home;
     const opponent = side === game.away ? game.home : game.away;
@@ -81,6 +124,12 @@ for (const p of Object.values(players)) {
     pitching[side.R > opponent.R ? 'W' : side.R < opponent.R ? 'L' : 'T']++;
     for (const key of ['H','R','ER','BB','SO','HR']) pitching[key] += side.pitching[key];
     outs += inningsToOuts(side.pitching.IP);
+    const stints = pitchingStints(side, opponent);
+    for (const hand of ['R','L']) {
+      const lines = stints.filter(s => s.hand === hand);
+      handLines[hand].push(...lines);
+      if (lines.length) handGames[hand]++;
+    }
   }
   batting.PA = batting.AB + batting.BB + batting.HBP + batting.SF + batting.SH;
   const totalBases = batting.H + batting['2B'] + 2 * batting['3B'] + 3 * batting.HR;
@@ -90,6 +139,7 @@ for (const p of Object.values(players)) {
   Object.assign(pitching, { IP: outsToInnings(outs), ERA: outs ? (pitching.ER * 27 / outs).toFixed(2) : '—', WHIP: outs ? ((pitching.H + pitching.BB) * 3 / outs).toFixed(2) : '—' });
   p.batting = batting;
   p.pitching = pitching;
+  p.pitchingSplits = ['R','L'].filter(hand => handGames[hand]).map(hand => ({ hand, G:handGames[hand], ...summarizePitching(handLines[hand]) }));
 }
 
 const app = document.querySelector('#app');
@@ -136,7 +186,32 @@ function renderGame(id) {
 }
 
 function boxTable(g, mode, cols) {
-  return `<div class="record-table-wrap"><table class="box-table"><thead><tr><th>선수</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${['away','home'].map(s=>`<tr><td>${player(g[s].player).name}</td>${cols.map(c=>`<td>${g[s][mode][c]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  const rows = ['away','home'].flatMap(s => {
+    const side = g[s];
+    const rows = [{ label:player(side.player).name, stats:side[mode] }];
+    if (mode === 'pitching' && side.pitchingStints) {
+      rows[0].label += ' (합계)';
+      for (const line of splitPitching(side.pitchingStints)) rows.push({ label:`↳ ${handNames[line.hand]}`, stats:line });
+    }
+    return rows;
+  });
+  return `<div class="record-table-wrap"><table class="box-table"><thead><tr><th>선수</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr><td>${row.label}</td>${cols.map(c=>`<td>${row.stats[c]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderPitchingSplits(p) {
+  if (recordMode !== 'pitching' || p.pitchingSplits.length < 2) return '';
+  const cols = ['G', ...pitchingColumns];
+  return `<section class="panel game-log"><div class="record-table-wrap"><table class="record-table"><caption>좌완 · 우완 통산 기록</caption><thead><tr><th class="season">투구 손</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${p.pitchingSplits.map(line=>`<tr><td class="season">${handNames[line.hand]}</td>${cols.map(c=>`<td>${line[c]}</td>`).join('')}</tr>`).join('')}</tbody></table></div><div class="rules"><p>한 경기에서 양손으로 던지면 양쪽 G에 각각 1경기로 집계합니다. IP는 실제 아웃 수를 3아웃제 이닝으로 환산하며, 승패는 선수 전체 기록에만 집계합니다.</p></div></section>`;
+}
+
+function renderPlayerGameLog(g, p) {
+  const side = g.away.player === p.id ? g.away : g.home;
+  const opponent = side === g.away ? g.home : g.away;
+  const line = side[recordMode];
+  const summary = recordMode === 'batting' ? `${line.H}H · ${line.R}R · ${line.HR}HR` : `${line.IP}IP · ${line.SO}K · ${line.R}R`;
+  const totalRow = `<div class="log-row" data-game="${g.id}"><time>${g.date.replaceAll('-','.')}</time><strong>vs ${player(opponent.player).name}</strong><span>${summary}</span></div>`;
+  if (recordMode !== 'pitching' || !side.pitchingStints) return totalRow;
+  return totalRow + splitPitching(side.pitchingStints).map(split=>`<div class="log-row" data-game="${g.id}"><time>↳ 투구 손별</time><strong>${handNames[split.hand]}</strong><span>${split.IP}IP · ${split.SO}K · ${split.R}R</span></div>`).join('');
 }
 
 function renderPlayers() {
@@ -148,10 +223,11 @@ function renderPlayer(id) {
   const p = player(id) || players.yunjae;
   const stats = recordMode === 'batting' ? p.batting : p.pitching;
   const cols = recordMode === 'batting' ? ['G','PA','AB','R','H','2B','HR','RBI','BB','HBP','SO','AVG','OBP','SLG','OPS'] : ['G','W','L','T','IP','H','R','ER','BB','SO','HR','ERA','WHIP'];
-  app.innerHTML = `<section class="container"><button class="back-btn" data-route="players">← 선수 목록</button><div class="profile-hero"><div class="profile-side ${p.color}" data-initial="${p.initial}"><strong>PLAYER ${p.number}</strong><span>영훈 × 윤재 FAMILY LEAGUE</span></div><div class="profile-main"><p class="eyebrow">TWO-WAY PLAYER</p><h1>${p.name}</h1><p class="bio">${p.role} · 우투우타 · 2026 가족 리그</p><div class="hero-stats"><div class="hero-stat"><strong>${p.batting.AVG}</strong><span>AVG</span></div><div class="hero-stat"><strong>${p.batting.HR}</strong><span>HR</span></div><div class="hero-stat"><strong>${p.pitching.ERA}</strong><span>ERA</span></div><div class="hero-stat"><strong>${p.pitching.SO}</strong><span>SO</span></div></div></div></div>
+  app.innerHTML = `<section class="container"><button class="back-btn" data-route="players">← 선수 목록</button><div class="profile-hero"><div class="profile-side ${p.color}" data-initial="${p.initial}"><strong>PLAYER ${p.number}</strong><span>영훈 × 윤재 FAMILY LEAGUE</span></div><div class="profile-main"><p class="eyebrow">TWO-WAY PLAYER</p><h1>${p.name}</h1><p class="bio">${p.role} · ${p.handedness} · 2026 가족 리그</p><div class="hero-stats"><div class="hero-stat"><strong>${p.batting.AVG}</strong><span>AVG</span></div><div class="hero-stat"><strong>${p.batting.HR}</strong><span>HR</span></div><div class="hero-stat"><strong>${p.pitching.ERA}</strong><span>ERA</span></div><div class="hero-stat"><strong>${p.pitching.SO}</strong><span>SO</span></div></div></div></div>
     <div class="record-tabs"><button class="record-tab ${recordMode==='batting'?'active':''}" data-mode="batting">타자</button><button class="record-tab ${recordMode==='pitching'?'active':''}" data-mode="pitching">투수</button></div>
     <section class="panel"><div class="record-table-wrap"><table class="record-table"><caption>${recordMode==='batting'?'타격':'투구'} 기록</caption><thead><tr><th class="season">시즌</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody><tr><td class="season">2026</td>${cols.map(c=>`<td>${stats[c]}</td>`).join('')}</tr></tbody><tfoot><tr><td class="season">통산</td>${cols.map(c=>`<td>${stats[c]}</td>`).join('')}</tr></tfoot></table></div></section>
-    <section class="panel game-log"><h2 class="panel-title">경기별 기록</h2>${games.slice().reverse().map(g=>{const side=g.away.player===p.id?'away':'home', line=g[side][recordMode]; return `<div class="log-row" data-game="${g.id}"><time>${g.date.replaceAll('-','.')}</time><strong>vs ${player(g[side==='away'?'home':'away'].player).name}</strong><span>${recordMode==='batting'?`${line.H}H · ${line.R}R · ${line.HR}HR`:`${line.IP}IP · ${line.SO}K · ${line.R}R`}</span></div>`}).join('')}</section>
+    ${renderPitchingSplits(p)}
+    <section class="panel game-log"><h2 class="panel-title">경기별 기록</h2>${games.slice().reverse().map(g=>renderPlayerGameLog(g,p)).join('')}</section>
   </section>`;
   setActive('players');
 }
