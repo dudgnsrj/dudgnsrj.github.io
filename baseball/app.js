@@ -158,7 +158,6 @@ for (const p of Object.values(players)) {
 }
 
 const app = document.querySelector('#app');
-let selectedDate = games[games.length - 1].date;
 let recordMode = 'batting';
 let trendState = { player:'all', mode:'batting', basis:'cumulative', hand:'all', metric:'AVG' };
 let restoreTrendFocus = '';
@@ -168,11 +167,11 @@ const player = id => players[id];
 const outcome = game => game.away.R === game.home.R ? '무승부' : `${player(game.away.R > game.home.R ? game.away.player : game.home.player).name} 승`;
 
 function renderSchedule() {
-  const onDate = games.filter(g => g.date === selectedDate);
+  const orderedGames = games.slice().sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
   app.innerHTML = `<section class="container">
     <p class="eyebrow">FAMILY LEAGUE · 2026 SEASON</p><h1>경기 일정과 결과</h1><p class="subhead">우리 가족이 함께한 모든 경기를 한곳에 기록합니다.</p>
-    <div class="date-bar"><button class="date-arrow" data-date-step="-1" aria-label="이전 경기">‹</button><div class="date-title">${formatDate(selectedDate)}<span>GAME DAY</span></div><button class="date-arrow" data-date-step="1" aria-label="다음 경기">›</button></div>
-    ${onDate.length ? `<div class="game-list">${onDate.map(gameCard).join('')}</div>` : '<div class="date-empty">이 날짜에는 기록된 경기가 없습니다.</div>'}
+    <div class="schedule-summary"><strong>전체 ${orderedGames.length}경기</strong><span>최신 경기순</span></div>
+    ${orderedGames.length ? `<div class="game-list">${orderedGames.map(gameCard).join('')}</div>` : '<div class="schedule-empty">아직 기록된 경기가 없습니다.</div>'}
     <div class="summary-strip"><div class="summary-stat"><strong>${games.length}</strong><span>총 경기</span></div><div class="summary-stat"><strong>${players.yunjae.pitching.W}–${players.yunjae.pitching.L}–${players.yunjae.pitching.T}</strong><span>윤재 승–패–무</span></div><div class="summary-stat"><strong>${games.reduce((total, g) => total + g.away.R + g.home.R, 0)}</strong><span>두 선수 총 득점</span></div></div>
   </section>`;
   setActive('schedule');
@@ -180,8 +179,8 @@ function renderSchedule() {
 
 function gameCard(g) {
   const a = player(g.away.player), h = player(g.home.player);
-  return `<article class="game-card" data-game="${g.id}" tabindex="0" aria-label="${a.name} 대 ${h.name} 경기 상세">
-    <div class="game-meta"><span class="status">FINAL</span><span class="game-no">${g.no}</span></div>
+  return `<article class="game-card" data-game="${g.id}" tabindex="0" role="button" aria-label="${formatDate(g.date)} ${a.name} 대 ${h.name} 경기 상세">
+    <div class="game-meta"><span class="status">FINAL</span><time class="game-date" datetime="${g.date}">${g.date.replaceAll('-','.')}<small>${['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][new Date(`${g.date}T00:00:00`).getDay()]}</small></time><span class="game-no">${g.no} · ${g.innings}이닝</span></div>
     <div class="matchup"><div class="team-row"><span class="team-dot ${a.color}">${a.initial}</span><span class="team-name">${a.name}<small>AWAY · 초 공격</small></span><span class="score">${g.away.R}</span></div><div class="team-row"><span class="team-dot ${h.color}">${h.initial}</span><span class="team-name">${h.name}<small>HOME · 말 공격</small></span><span class="score">${g.home.R}</span></div></div>
     <div class="game-result"><div><strong>${outcome(g)}</strong><span>박스스코어 보기 →</span></div></div>
   </article>`;
@@ -377,7 +376,6 @@ document.addEventListener('click', e => {
   const gameEl = e.target.closest('[data-game]'); if(gameEl){ route('game',gameEl.dataset.game); return; }
   const playerEl = e.target.closest('[data-player]'); if(playerEl){ route('player',playerEl.dataset.player); return; }
   const mode = e.target.closest('[data-mode]'); if(mode){ recordMode=mode.dataset.mode; navigate(); return; }
-  const step = e.target.closest('[data-date-step]'); if(step){ const idx=games.findIndex(g=>g.date===selectedDate); const next=Math.max(0,Math.min(games.length-1,idx+Number(step.dataset.dateStep))); selectedDate=games[next].date; renderSchedule(); }
 });
 document.addEventListener('keydown', e => { if((e.key==='Enter'||e.key===' ') && e.target.matches('[data-game],[data-player]')) e.target.click(); });
 document.addEventListener('change', e => {
