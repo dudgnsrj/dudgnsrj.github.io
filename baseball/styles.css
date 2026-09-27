@@ -138,6 +138,47 @@ h1 { margin-bottom: 8px; font-size: clamp(30px, 5vw, 48px); line-height: 1.1; le
 footer { min-height: 70px; padding: 20px max(24px, calc((100vw - 1180px) / 2)); display: flex; justify-content: space-between; align-items: center; gap: 20px; color: #9ba9ba; background: var(--navy); font-size: 11px; }
 footer span:first-child { color: #fff; font-weight: 800; }
 
+.table-hint { margin: 0; padding: 12px 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.section-heading h2 { margin: 0; font-size: 16px; }
+.text-link, .game-stats-table a { color: #174d7f; font-weight: 700; text-underline-offset: 4px; }
+.text-link { font-size: 13px; }
+.record-table-wrap { max-width: 100%; }
+.box-table th, .box-table td, .record-table th, .record-table td { white-space: nowrap; }
+.box-table tbody th { color: var(--ink); background: #fff; font-size: 12px; }
+.box-table th:first-child { min-width: 100px; }
+.box-table th:first-child, .game-stats-table th:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
+.game-stats-table tbody th { background: #fff; color: var(--ink); font-size: 12px; }
+.game-stats-table .split-row th, .game-stats-table .split-row td { color: var(--muted); background: #f7f9fb; }
+.game-stats-table tbody tr:hover td, .game-stats-table tbody tr:hover th { background: #f3f6f9; }
+.game-stats-table .selected-stat { background: #eef4f9; font-weight: 800; }
+.trend-controls { display: flex; flex-wrap: wrap; gap: 14px; padding: 20px; margin-top: 26px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+.trend-control { flex: 1 1 140px; min-width: 0; }
+.trend-control span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.trend-control select { width: 100%; min-height: 44px; padding: 9px 30px 9px 10px; border: 1px solid #c6d0da; border-radius: 7px; background: #f8fafb; color: var(--ink); font: inherit; font-size: 13px; }
+:is(button, a, select, [tabindex]):focus-visible { outline: 3px solid #397ab3; outline-offset: 3px; }
+.trend-summaries { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 20px 0; }
+.trend-summary { padding: 22px; border: 1px solid var(--line); border-top: 4px solid var(--orange); border-radius: 10px; background: #fff; }
+.trend-summary.younghun { border-top-color: var(--green); }
+.trend-summary > span { color: var(--muted); font-size: 13px; }
+.trend-summary strong { display: block; margin: 10px 0; font: 800 34px Archivo, sans-serif; }
+.trend-summary strong small { color: var(--muted); font-size: 14px; }
+.trend-summary p { margin: 0; color: var(--muted); font-size: 12px; }
+.trend-panel { margin-top: 20px; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 20px; }
+.player-key { display: inline-flex; align-items: center; gap: 7px; font-family: "Noto Sans KR", sans-serif; font-size: 12px; font-weight: 700; }
+.player-key::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #d95713; }
+.player-key.younghun::before { background: #08754c; }
+.chart-scroll { width: 100%; overflow-x: auto; padding: 16px 10px 0; }
+.trend-chart { display: block; width: 100%; min-width: 560px; height: auto; }
+.trend-chart text { font: 12px Archivo, sans-serif; fill: #586776; }
+.trend-chart .chart-game-number { font-size: 10px; fill: #7a8794; }
+.trend-chart a:hover circle, .trend-chart a:focus circle { stroke-width: 5px; }
+.chart-empty { padding: 70px 20px; color: var(--muted); text-align: center; font-size: 14px; line-height: 1.8; }
+.no-appearance { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+.stat-guide { margin-top: 20px; }
+.stat-guide summary { padding: 18px 20px; cursor: pointer; font-size: 14px; font-weight: 700; }
+
 @media (max-width: 780px) {
   .site-header { height: 68px; padding: 0 15px; gap: 8px; }
   .brand strong { font-size: 15px; }
@@ -159,4 +200,16 @@ footer span:first-child { color: #fff; font-weight: 800; }
   .hero-stats { gap: 10px; }
   .hero-stat strong { font-size: 20px; }
   footer { flex-direction: column; text-align: center; }
+  .trend-controls { padding: 14px; gap: 12px; }
+  .trend-control { flex-basis: calc(50% - 12px); }
+  .trend-summaries { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .trend-summary { padding: 16px 12px; }
+  .trend-summary strong { font-size: 27px; }
+  .trend-summary p { line-height: 1.7; }
+}
+
+@media (max-width: 400px) {
+  .brand-mark { display: none; }
+  .nav-link { padding: 0 8px; font-size: 12px; }
+  .trend-summaries { grid-template-columns: 1fr; }
 }
