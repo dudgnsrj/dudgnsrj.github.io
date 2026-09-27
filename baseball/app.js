@@ -78,6 +78,17 @@ const games = [
       ['4회','윤재','안타 · 삼진 · 땅볼(주자 2루) · 안타 · 안타(윤재 2–0 영훈) · 뜬공 · 땅볼'],['4회','영훈','볼넷 · 안타 · 땅볼 · 홈런(윤재 2–3 영훈) · 땅볼'],
       ['5회','윤재','영훈 우완 전환 · 뜬공 · 내야안타 · 볼넷 · 폭투로 주자 2·3루 · 땅볼(3–3) · 사구 · 삼진 · 내야안타(윤재 4–3 영훈) · 땅볼'],['5회','영훈','안타 · 뜬공 · 뜬공']
     ]
+  },
+  {
+    id: '20260927-05', date: '2026-09-27', label: '9월 27일 일요일', no: 'GAME 05', innings: 3,
+    away: { player: 'yunjae', runs: [0,0,3], R: 3, H: 6, E: 0, batting: { AB:19,R:3,H:6,'2B':2,HR:0,RBI:2,BB:0,HBP:0,SO:11 }, pitching: { hand:'R',IP:'2.0',H:3,R:0,ER:0,BB:1,SO:2,HR:0 } },
+    home: { player: 'younghun', runs: [0,0,0], R: 0, H: 3, E: 1, batting: { AB:9,R:0,H:3,'2B':1,HR:0,RBI:0,BB:1,HBP:0,SO:2 }, pitching: { hand:'R',IP:'4.0',H:6,R:3,ER:1,BB:0,SO:11,HR:0 } },
+    note: '3이닝 경기. 윤재가 3회초 2루타, 실책, 적시타로 3득점하며 3–0으로 승리했습니다. 영훈은 전 이닝 우완으로 던져 12아웃(4.0 IP) 중 11개를 삼진으로 잡았습니다. 윤재는 6아웃(2.0 IP) 무실점입니다. 3회초 3아웃 이후의 실책을 아웃으로 복원하면 이닝이 끝나므로 이후 2득점은 비자책점으로 처리했습니다. 실책 득점에는 타점을 부여하지 않아 윤재의 타점은 2개입니다.',
+    plays: [
+      ['1회','윤재','삼진 · 삼진 · 땅볼 · 삼진'],['1회','영훈','뜬공 · 안타 · 안타 · 삼진'],
+      ['2회','윤재','삼진 · 삼진 · 삼진 · 번트안타 · 2루타 · 삼진'],['2회','영훈','볼넷 · 뜬공 · 2루타 · 뜬공'],
+      ['3회','윤재','안타 · 삼진 · 안타 · 2루타(윤재 1–0 영훈) · 삼진 · 삼진 · 실책 출루(윤재 2–0 영훈) · 안타(윤재 3–0 영훈) · 삼진'],['3회','영훈','뜬공 · 삼진']
+    ]
   }
 ];
 
@@ -101,7 +112,7 @@ function summarizePitching(lines) {
   return { ...stats, IP:outsToInnings(outs), ERA:outs ? (stats.ER * 27 / outs).toFixed(2) : '—', WHIP:outs ? ((stats.H + stats.BB) * 3 / outs).toFixed(2) : '—' };
 }
 function pitchingStints(side, opponent) {
-  // 이전 세 경기는 우완. 좌·우 전환이 있는 경기는 구간별 기록을 사용한다.
+  // 투구 손이 따로 기록되지 않은 기존 경기는 우완. 좌·우 전환 경기는 구간별 기록을 사용한다.
   return side.pitchingStints || [{ hand:'R', ...side.pitching, HBP:opponent.batting.HBP || 0 }];
 }
 function splitPitching(stints) {
