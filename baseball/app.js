@@ -353,10 +353,10 @@ function renderTrends(query = '') {
     const row=s.rows.slice().reverse().find(r=>r.stats);
     return `<div class="trend-summary ${s.player.color}"><span>${s.player.name} · ${basis === 'cumulative' ? '현재 누적' : '최근 경기'}</span><strong>${row?.stats?.[metric] ?? '—'} <small>${metric === 'K9' ? 'K/9' : metric === 'BB9' ? 'BB/9' : metric}</small></strong><p>${row ? `${row.game.date.replaceAll('-','.')} 기준 · ${row.stats.G}경기 집계` : '해당 투구 기록 없음'}</p></div>`;
   }).join('');
-  const tableRows=series[0].rows.flatMap((_,index)=>series.map(s=>{
-    const row=s.rows[index];
-    return `<tr><th scope="row"><a href="#game/${row.game.id}">${row.number}경기 · ${row.game.date.slice(5).replace('-','/')}</a></th><td><span class="player-key ${s.player.color}">${s.player.name}</span>${row.played ? '' : '<small class="no-appearance">해당 손 미등판</small>'}</td>${cols.map(c=>`<td class="${c === metric ? 'selected-stat' : ''}">${row.stats?.[c] ?? '—'}</td>`).join('')}</tr>`;
-  })).join('');
+  const playerTables=series.map(s=>{
+    const rows=s.rows.map(row=>`<tr><th scope="row"><a href="#game/${row.game.id}">${row.number}경기 · ${row.game.date.slice(5).replace('-','/')}</a>${row.played ? '' : '<small class="no-appearance">해당 손 미등판</small>'}</th>${cols.map(c=>`<td class="${c === metric ? 'selected-stat' : ''}">${row.stats?.[c] ?? '—'}</td>`).join('')}</tr>`).join('');
+    return `<div class="trend-player-table"><h3 id="trend-table-${s.player.id}"><span class="player-key ${s.player.color}">${s.player.name}</span><span>${basisLabel} ${mode === 'batting' ? '타격' : '투구'} 기록</span></h3><div class="record-table-wrap" tabindex="0" aria-label="${s.player.name} ${basisLabel} 기록 상세 표"><table class="record-table game-stats-table" aria-labelledby="trend-table-${s.player.id}"><thead><tr><th scope="col">경기</th>${cols.map(statHeader).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }).join('');
   app.innerHTML=`<section class="container"><p class="eyebrow">SEASON PROGRESS · 2026</p><h1>기록 추이</h1><p class="subhead">한 경기씩 쌓이는 기록, 두 선수의 변화를 함께 살펴보세요.</p>
     <div class="trend-controls">
       ${trendSelect('player','선수',[['all','두 선수 비교'],['yunjae','윤재'],['younghun','영훈']])}
@@ -367,7 +367,7 @@ function renderTrends(query = '') {
     </div>
     <div class="trend-summaries">${cards}</div>
     <section class="panel trend-panel"><div class="section-heading"><h2>${trendMetricLabel(metric,mode)} · ${basisLabel}</h2><div class="chart-legend">${series.map(s=>`<span class="player-key ${s.player.color}">${s.player.name}</span>`).join('')}</div></div>${renderTrendChart(series,metric)}<p class="table-hint">점을 누르면 경기 상세로 이동합니다.${mode === 'pitching' && hand !== 'all' ? (basis === 'cumulative' ? ' 빈 점은 해당 손 미등판으로 누적 기록이 유지된 경기입니다.' : ' 해당 손으로 던지지 않은 경기에는 점을 표시하지 않습니다.') : ''}</p></section>
-    <section class="panel trend-panel"><h2 class="panel-title">${basis === 'cumulative' ? '각 경기 종료 시점의 누적 기록' : '각 경기의 기록'}</h2><div class="record-table-wrap" tabindex="0" aria-label="${basisLabel} 기록 상세 표"><table class="record-table game-stats-table"><thead><tr><th scope="col">경기</th><th scope="col">선수</th>${cols.map(statHeader).join('')}</tr></thead><tbody>${tableRows}</tbody></table></div><p class="table-hint">좌우로 스크롤하면 모든 기록을 볼 수 있습니다. —는 기록 또는 계산에 필요한 분모가 없다는 뜻입니다.</p></section>
+    <section class="panel trend-panel"><h2 class="panel-title">${basis === 'cumulative' ? '각 경기 종료 시점의 누적 기록' : '각 경기의 기록'}</h2><div class="trend-player-tables">${playerTables}</div><p class="table-hint">각 표를 좌우로 스크롤하면 모든 기록을 볼 수 있습니다. —는 기록 또는 계산에 필요한 분모가 없다는 뜻입니다.</p></section>
     <details class="panel stat-guide"><summary>스탯 계산 기준</summary><div class="rules"><p>AVG = 안타 ÷ 타수 · OBP = (안타 + 볼넷 + 사구) ÷ (타수 + 볼넷 + 사구 + 희생플라이) · SLG = 총 루타 ÷ 타수 · OPS = OBP + SLG</p><p>ERA = 자책점 × 27 ÷ 아웃 수 · WHIP = (피안타 + 볼넷) × 3 ÷ 아웃 수 · K/9 = 탈삼진 × 27 ÷ 아웃 수 · BB/9 = 볼넷 × 27 ÷ 아웃 수</p><p>투구 이닝은 3아웃 기준입니다. 3.1은 3⅓이닝, 3.2는 3⅔이닝입니다. 누적 비율은 경기별 비율의 평균이 아니라, 해당 시점까지의 원기록 합계로 다시 계산합니다. 좌·우완은 같은 선수의 투구 손에 따른 분류이며, 상대 타자의 타격 방향을 뜻하지 않습니다.</p></div></details>
   </section>`;
   setActive('trends');

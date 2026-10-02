@@ -164,6 +164,11 @@ footer span:first-child { color: #fff; font-weight: 800; }
 .trend-summary strong small { color: var(--muted); font-size: 14px; }
 .trend-summary p { margin: 0; color: var(--muted); font-size: 12px; }
 .trend-panel { margin-top: 20px; }
+.trend-player-tables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 16px 16px 0; }
+.trend-player-table { min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.trend-player-table:only-child { grid-column: 1 / -1; }
+.trend-player-table h3 { display: flex; align-items: center; gap: 10px; margin: 0; padding: 15px 16px; font-size: 12px; color: var(--muted); }
+.trend-player-table h3 .player-key { font-size: 15px; color: var(--ink); }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 20px; }
 .player-key { display: inline-flex; align-items: center; gap: 7px; font-family: "Noto Sans KR", sans-serif; font-size: 12px; font-weight: 700; }
 .player-key::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #d95713; }
@@ -200,6 +205,7 @@ footer span:first-child { color: #fff; font-weight: 800; }
   .hero-stat strong { font-size: 20px; }
   footer { flex-direction: column; text-align: center; }
   .trend-controls { padding: 14px; gap: 12px; }
+  .trend-player-tables { grid-template-columns: minmax(0, 1fr); padding: 12px 12px 0; gap: 12px; }
   .trend-control { flex-basis: calc(50% - 12px); }
   .trend-summaries { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .trend-summary { padding: 16px 12px; }
