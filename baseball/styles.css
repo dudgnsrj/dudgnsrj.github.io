@@ -399,3 +399,12 @@ footer span:first-child { color: #fff; font-weight: 800; }
   .nav-link { padding: 0 8px; font-size: 12px; }
   .trend-summaries { grid-template-columns: 1fr; }
 }
+/* Experimental park model: keep assumptions alongside the numbers. */
+.saber-notice{background:#edf4fa;border-left:3px solid #17639c;padding:14px 18px;line-height:1.7;color:#23425c;margin:20px 0}
+.saber-notice a,.saber-method a,.log-summary p a{color:#075a91;text-decoration:underline}
+.saber-method{padding:24px;margin-top:24px}
+.saber-method p{line-height:1.85;color:#465568;max-width:1000px}
+.park-table th:first-child{text-align:left;min-width:160px}
+.park-table td:last-child{white-space:nowrap}
+.log-summary>p{font-size:12px;line-height:1.7;margin:14px 0 0;color:#465568}
+@media(max-width:780px){.site-header nav{flex-wrap:wrap}.saber-method{padding:18px}.saber-notice{font-size:13px}}

@@ -19,6 +19,7 @@ const context = {
   URLSearchParams
 };
 vm.createContext(context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../sabermetrics.js'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8'), context);
 const run = expression => vm.runInContext(expression, context);
 const data = expression => JSON.parse(JSON.stringify(run(expression)));
