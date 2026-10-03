@@ -189,6 +189,7 @@ for (const p of Object.values(players)) {
 const app = document.querySelector('#app');
 let recordMode = 'batting';
 let trendState = { player:'all', mode:'batting', basis:'cumulative', hand:'all', metric:'AVG' };
+let leadersState = {};
 let restoreTrendFocus = '';
 
 const route = (name, id = '') => { location.hash = id ? `${name}/${id}` : name; };
@@ -261,8 +262,81 @@ function renderPlayerGameLog(g, p) {
   return totalRow + splitPitching(side.pitchingStints).map(split=>`<tr class="split-row"><th scope="row">↳ ${handNames[split.hand]}</th><td>손별 기록</td>${cols.map(c=>`<td>${split[c]}</td>`).join('')}</tr>`).join('');
 }
 
-function renderPlayers() {
-  app.innerHTML = `<section class="container"><p class="eyebrow">PLAYER DIRECTORY</p><h1>선수 기록</h1><p class="subhead">타격과 투구, 두 분야의 기록을 확인하세요.</p><div class="players-grid">${Object.values(players).map(p=>`<article class="player-card ${p.color}" data-player="${p.id}" data-initial="${p.initial}" tabindex="0"><span class="number">PLAYER ${p.number}</span><h2>${p.name}</h2><p>${p.role} · 가족 리그 2026</p><div class="mini-stats"><div><strong>${p.batting.AVG}</strong><span>AVG</span></div><div><strong>${p.batting.HR}</strong><span>HR</span></div><div><strong>${p.pitching.ERA}</strong><span>ERA</span></div></div></article>`).join('')}</div></section>`;
+const leaderColumns = {
+  batting: {
+    standard:['G','AB','R','H','2B','3B','HR','RBI','BB','SO','AVG','OBP','SLG','OPS'],
+    expanded:['G','PA','AB','H','TB','XBH','HR','RBI','BB','HBP','SO','SF','SH','AVG','OBP','SLG','OPS']
+  },
+  pitching: {
+    standard:['W','L','T','ERA','G','IP','H','R','ER','HR','HBP','BB','SO','WHIP'],
+    expanded:['G','IP','ERA','WHIP','K9','BB9','H','R','ER','HR','HBP','BB','SO']
+  }
+};
+Object.assign(statLabels, { W:'승', L:'패', T:'무승부', '3B':'3루타', TB:'총 루타', XBH:'장타 수', SF:'희생플라이', SH:'희생번트' });
+const rateKeys = ['AVG','OBP','SLG','OPS','ERA','WHIP','K9','BB9'];
+const statName = key => key === 'K9' ? 'K/9' : key === 'BB9' ? 'BB/9' : key;
+const months = () => [...new Set(games.map(g=>g.date.slice(0,7)))].sort().reverse();
+const monthLabel = month => `${month.slice(0,4)}년 ${Number(month.slice(5))}월`;
+const periodOptions = () => [['all','시즌 전체'],['last3','최근 3경기'],['last5','최근 5경기'],...months().map(m=>[m,monthLabel(m)])];
+function periodGames(period) {
+  const ordered=games.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+  return period==='last3' ? ordered.slice(-3) : period==='last5' ? ordered.slice(-5) : months().includes(period) ? ordered.filter(g=>g.date.startsWith(period)) : ordered;
+}
+function aggregateRecords(id, mode, hand, selectedGames) {
+  const lines=[];
+  const decisions={G:0,W:0,L:0,T:0};
+  for(const game of selectedGames) {
+    const side=game.away.player===id ? game.away : game.home;
+    const opponent=side===game.away ? game.home : game.away;
+    const entry=mode==='batting' ? [side.batting] : pitchingStints(side,opponent).filter(s=>hand==='all'||s.hand===hand);
+    if(!entry.length) continue;
+    lines.push(...entry);
+    decisions.G++;
+    decisions[side.R>opponent.R?'W':side.R<opponent.R?'L':'T']++;
+  }
+  if(!lines.length) return null;
+  const stats=mode==='batting' ? summarizeBatting(lines) : summarizePitching(lines);
+  return { ...stats, ...decisions, ...(mode==='batting' ? {TB:stats.H+stats['2B']+2*stats['3B']+3*stats.HR,XBH:stats['2B']+stats['3B']+stats.HR} : hand!=='all' ? {W:'—',L:'—',T:'—'} : {}) };
+}
+function segmentedLinks(page, state, key, options, label) {
+  return `<div class="stats-segments" role="group" aria-label="${label}">${options.map(([value,label])=>{
+    const next={...state,[key]:value};
+    if(key==='mode') { next.hand='all'; if(page==='trends') next.metric=trendMetrics[value][0]; else {next.sort=value==='batting'?'AVG':'ERA';next.dir=value==='batting'?'desc':'asc';} }
+    return `<a href="#${page}?${new URLSearchParams(next)}" class="${state[key]===value?'active':''}" ${state[key]===value?'aria-current="page"':''}>${label}</a>`;
+  }).join('')}</div>`;
+}
+function readLeaderState(query) {
+  const p=new URLSearchParams(query), mode=p.get('mode')==='pitching'?'pitching':'batting';
+  const view=p.get('view')==='expanded'?'expanded':'standard';
+  const sort=leaderColumns[mode][view].includes(p.get('sort'))?p.get('sort'):mode==='batting'?'AVG':'ERA';
+  return {mode,view,sort,dir:['asc','desc'].includes(p.get('dir'))?p.get('dir'):sort==='ERA'?'asc':'desc',period:periodOptions().some(([v])=>v===p.get('period'))?p.get('period'):'all',hand:mode==='pitching'&&['R','L'].includes(p.get('hand'))?p.get('hand'):'all'};
+}
+function leaderSelect(key,label,options) {
+  return `<label class="trend-control" for="leaders-${key}"><span>${label}</span><select id="leaders-${key}" data-leaders="${key}">${options.map(([v,t])=>`<option value="${v}" ${leadersState[key]===v?'selected':''}>${t}</option>`).join('')}</select></label>`;
+}
+function rankedLeaders(state) {
+  const entries=Object.values(players).map(p=>({player:p,stats:aggregateRecords(p.id,state.mode,state.hand,periodGames(state.period))}));
+  const value=e=>e.stats?.[state.sort];
+  const missing=v=>v==null||v==='—';
+  entries.sort((a,b)=>missing(value(a))?missing(value(b))?a.player.id.localeCompare(b.player.id):1:missing(value(b))?-1:(Number(value(a))-Number(value(b)))*(state.dir==='asc'?1:-1)||a.player.id.localeCompare(b.player.id));
+  entries.forEach((e,i)=>{e.rank=missing(value(e))?'—':i>0&&value(e)===value(entries[i-1])?entries[i-1].rank:i+1;});
+  return entries;
+}
+function renderPlayers(query='') {
+  leadersState=readLeaderState(query);
+  const {mode,view,sort,dir,hand,period}=leadersState;
+  const cols=leaderColumns[mode][view], entries=rankedLeaders(leadersState);
+  const selection=periodOptions().find(([v])=>v===period)[1];
+  const headers=cols.map(c=>`<th scope="col" aria-sort="${c===sort?(dir==='asc'?'ascending':'descending'):'none'}"><button id="sort-${c}" data-stat-sort="${c}" title="${statLabels[c]}" aria-label="${statLabels[c]} (${statName(c)}) 정렬">${statName(c)}<span aria-hidden="true">${c===sort?(dir==='asc'?' ↑':' ↓'):' ↕'}</span></button></th>`).join('');
+  app.innerHTML=`<section class="container stats-page"><header class="stats-page-heading"><div><p class="eyebrow">FAMILY LEAGUE / STATISTICS</p><h1>선수 기록</h1><p class="subhead">우리 가족 리그의 기록을 한눈에.</p></div><span class="season-stamp">2026<span>SEASON</span></span></header>
+    ${segmentedLinks('players',leadersState,'mode',[['batting','타격 · HITTING'],['pitching','투구 · PITCHING']],'기록 분야')}
+    <div class="stats-filterbar">${leaderSelect('period','기록 기간',periodOptions())}${mode==='pitching'?leaderSelect('hand','투구 손',[['all','전체'],['R','우완'],['L','좌완']]):'<div class="filter-note">영훈 · 좌타<br>윤재 · 우타</div>'}<a class="reset-link" href="#players?mode=${mode}">필터 초기화</a></div>
+    <div class="stats-table-heading"><div><h2>${mode==='batting'?'타격':'투구'} 순위</h2><p>${selection} · ${periodGames(period).length}경기 · ${mode==='pitching'?hand==='all'?'전체 투구':handNames[hand]:'두 선수 전체'} · 규정 타석/이닝 제한 없음</p></div>${segmentedLinks('players',leadersState,'view',[['standard','기본 기록'],['expanded','상세 기록']],'표 항목')}</div>
+    <div class="record-table-wrap stats-scroll" tabindex="0" aria-label="${mode==='batting'?'타격':'투구'} 순위표, 좌우 스크롤 가능"><table class="record-table league-table"><caption class="sr-only">2026 ${selection} ${mode==='batting'?'타격':'투구'} 순위</caption><thead><tr><th scope="col" class="player-cell">순위 / 선수</th>${headers}</tr></thead><tbody>${entries.map(({player:p,stats,rank})=>`<tr><th scope="row" class="player-cell"><div class="ranked-player"><span class="rank-number">${rank}</span><span class="team-dot ${p.color}">${p.initial}</span><div><a href="#player/${p.id}">${p.name}</a><small>${p.handedness}</small></div></div></th>${cols.map(c=>`<td class="${c===sort?'sorted-stat':''}">${stats?.[c]??'—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <p class="table-hint">열 제목을 누르면 오름차순·내림차순으로 정렬됩니다. 선수 이름을 누르면 상세 기록으로 이동합니다.${hand!=='all'?' 좌·우완별 승패는 따로 부여하지 않으며, 해당 손 미등판은 —로 표시합니다.':''}</p>
+    <div class="stats-roster">${Object.values(players).map(p=>`<a href="#trends?player=${p.id}&mode=${mode}" class="roster-link"><span class="team-dot ${p.color}">${p.initial}</span><span><strong>${p.name}</strong><small>경기 로그 · 누적 기록</small></span><span aria-hidden="true">↗</span></a>`).join('')}</div>
+    <p class="stats-footnote">기록된 항목만 표시합니다. 도루·도루실패·세이브 등 별도로 기록하지 않은 항목은 제외했습니다. 투구 이닝과 ERA는 3아웃 환산 기준이며, 실책 상황에 따른 자책점 추정은 각 경기 설명을 따릅니다.</p>
+  </section>`;
   setActive('players');
 }
 
@@ -303,9 +377,11 @@ function readTrendState(query) {
   return {
     player:['yunjae','younghun'].includes(params.get('player')) ? params.get('player') : 'all',
     mode,
-    basis:params.get('basis') === 'game' ? 'game' : 'cumulative',
+    basis:['game','cumulative'].includes(params.get('basis')) ? params.get('basis') : 'gamelog',
     hand:mode === 'pitching' && ['R','L'].includes(params.get('hand')) ? params.get('hand') : 'all',
-    metric:trendMetrics[mode].includes(params.get('metric')) ? params.get('metric') : trendMetrics[mode][0]
+    metric:trendMetrics[mode].includes(params.get('metric')) ? params.get('metric') : trendMetrics[mode][0],
+    period:periodOptions().some(([v])=>v===params.get('period'))?params.get('period'):'all',
+    view:params.get('view')==='expanded'?'expanded':'standard'
   };
 }
 
@@ -356,35 +432,70 @@ function renderTrendChart(series, metric) {
     }).join('');
     return `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${points}`;
   }).join('');
-  return `<div class="chart-scroll" tabindex="0" aria-label="${metric} 추이 그래프, 좌우 스크롤 가능"><svg class="trend-chart" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="trend-chart-title trend-chart-desc"><title id="trend-chart-title">${trendMetricLabel(metric,trendState.mode)} ${trendState.basis === 'cumulative' ? '누적' : '경기별'} 추이</title><desc id="trend-chart-desc">가로축은 경기 순서, 세로축은 ${metric}입니다. 정확한 수치는 아래 표에서 확인할 수 있습니다. 그래프의 점을 누르면 경기 상세로 이동합니다.</desc>${grid}${labels}${lines}</svg></div>`;
+  return `<div class="chart-scroll" tabindex="0" aria-label="${metric} 추이 그래프, 좌우 스크롤 가능"><svg class="trend-chart" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="trend-chart-title trend-chart-desc"><title id="trend-chart-title">${trendMetricLabel(metric,trendState.mode)} ${trendBasisLabel(trendState.basis,metric)} 추이</title><desc id="trend-chart-desc">가로축은 경기 순서, 세로축은 ${metric}입니다. 정확한 수치는 경기 로그 표에서 확인할 수 있습니다. 그래프의 점을 누르면 경기 상세로 이동합니다.</desc>${grid}${labels}${lines}</svg></div>`;
+}
+
+function trendBasisLabel(basis,metric) {
+  return basis==='cumulative'||(basis==='gamelog'&&rateKeys.includes(metric))?'시즌 누적':'경기별';
+}
+function buildLogSeries(id,mode,basis,hand,period) {
+  const cumulative=buildHistory(id,mode,'cumulative',hand);
+  const single=buildHistory(id,mode,'game',hand);
+  const selected=new Set(periodGames(period).map(g=>g.id));
+  return cumulative.map((row,index)=>{
+    const gameStats=single[index].stats;
+    let stats=basis==='cumulative'?row.stats:gameStats;
+    if(basis==='gamelog') stats=gameStats||row.stats ? {...gameStats,...Object.fromEntries(rateKeys.map(key=>[key,row.stats?.[key]??'—']))} : null;
+    if(stats&&mode==='batting') stats={...stats,TB:stats.H+stats['2B']+2*stats['3B']+3*stats.HR};
+    return {...row,stats,gameStats};
+  }).filter(row=>selected.has(row.game.id));
+}
+function renderLogTable(series, cols) {
+  const {mode,basis,hand,metric}=trendState;
+  const p=series.player, ordered=series.rows.slice().reverse();
+  const monthKeys=[...new Set(ordered.map(r=>r.game.date.slice(0,7)))];
+  const body=monthKeys.map(month=>{
+    const entries=ordered.filter(r=>r.game.date.startsWith(month));
+    const totals=aggregateRecords(p.id,mode,hand,entries.map(r=>r.game));
+    const rows=entries.map(row=>{
+      const side=row.game.away.player===p.id?row.game.away:row.game.home;
+      const opponent=side===row.game.away?row.game.home:row.game.away;
+      const result=side.R>opponent.R?'win':side.R<opponent.R?'loss':'draw';
+      return `<tr data-log-game="${row.game.id}"><th scope="row"><a href="#game/${row.game.id}">${row.game.date.slice(5).replace('-','/')}</a><small class="log-game-number">${row.number}경기${row.played?'':' · 해당 손 미등판'}</small></th><td>${side===row.game.away?'@':'vs'} ${players[opponent.player].name}</td><td><span class="result-tag ${result}">${result==='win'?'승':result==='loss'?'패':'무'}</span> ${side.R}–${opponent.R}</td>${cols.map(c=>`<td class="${c===metric?'selected-stat':''} ${basis==='gamelog'&&rateKeys.includes(c)?'cumulative-cell':''}">${row.stats?.[c]??'—'}</td>`).join('')}</tr>`;
+    }).join('');
+    return `<tr class="month-divider"><th colspan="${cols.length+3}" scope="rowgroup">${monthLabel(month)} <span>${entries.length}경기</span></th></tr>${rows}<tr class="month-total"><th scope="row">${Number(month.slice(5))}월 합계</th><td colspan="2">${totals?.G??0}경기 집계</td>${cols.map(c=>`<td>${totals?.[c]??'—'}</td>`).join('')}</tr>`;
+  }).join('');
+  return `<section class="trend-player-table log-player-table"><header class="log-player-heading"><span class="team-dot ${p.color}">${p.initial}</span><div><h3 id="trend-table-${p.id}">${p.name}</h3><span>${p.handedness}</span></div><a href="#player/${p.id}" aria-label="${p.name} 선수 상세">프로필 ↗</a></header><div class="record-table-wrap" tabindex="0" aria-label="${p.name} ${mode==='batting'?'타격':'투구'} 경기 로그"><table class="record-table game-stats-table log-table" aria-labelledby="trend-table-${p.id}"><thead><tr><th scope="col">날짜</th><th scope="col">상대</th><th scope="col">결과</th>${cols.map(c=>`<th scope="col" class="${basis==='gamelog'&&rateKeys.includes(c)?'cumulative-heading':''}" title="${statLabels[c]}">${statName(c)}${basis==='gamelog'&&rateKeys.includes(c)?'<small>누적</small>':''}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div></section>`;
 }
 
 function renderTrends(query = '') {
   trendState=readTrendState(query);
-  const { mode, basis, hand, metric }=trendState;
+  const { mode, basis, hand, metric, period, view }=trendState;
   const ids=trendState.player === 'all' ? ['yunjae','younghun'] : [trendState.player];
-  const series=ids.map(id=>({ player:players[id], color:id === 'yunjae' ? '#d95713' : '#08754c', rows:buildHistory(id,mode,basis,hand) }));
-  const basisLabel=basis === 'cumulative' ? '누적' : '경기별';
-  const cols=mode === 'batting' ? ['G',...battingColumns] : ['G',...pitchingColumns];
+  const series=ids.map(id=>({ player:players[id], color:id === 'yunjae' ? '#d95713' : '#08754c', rows:buildLogSeries(id,mode,basis,hand,period) }));
+  const basisLabel=trendBasisLabel(basis,metric);
+  const cols=mode==='batting' ? (view==='expanded'?['PA','AB','R','H','TB','2B','3B','HR','RBI','BB','HBP','SO','SF','SH','AVG','OBP','SLG','OPS']:['AB','R','H','2B','HR','RBI','BB','SO','AVG','OBP','SLG','OPS']) : (view==='expanded'?[...pitchingColumns]:['IP','H','R','ER','BB','SO','HR','ERA','WHIP']);
+  if(basis==='cumulative') cols.unshift('G');
   const cards=series.map(s=>{
-    const row=s.rows.slice().reverse().find(r=>r.stats);
-    return `<div class="trend-summary ${s.player.color}"><span>${s.player.name} · ${basis === 'cumulative' ? '현재 누적' : '최근 경기'}</span><strong>${row?.stats?.[metric] ?? '—'} <small>${metric === 'K9' ? 'K/9' : metric === 'BB9' ? 'BB/9' : metric}</small></strong><p>${row ? `${row.game.date.replaceAll('-','.')} 기준 · ${row.stats.G}경기 집계` : '해당 투구 기록 없음'}</p></div>`;
+    const stats=aggregateRecords(s.player.id,mode,hand,periodGames(period));
+    const keys=mode==='batting'?['AVG','H','HR','OPS']:['IP','ERA','SO','WHIP'];
+    return `<section class="log-summary ${s.player.color}"><div><span class="player-key ${s.player.color}">${s.player.name}</span><span>${periodOptions().find(([v])=>v===period)[1]} · ${stats?.G??0}경기</span></div><dl>${keys.map(k=>`<div><dt>${statName(k)}</dt><dd>${stats?.[k]??'—'}</dd></div>`).join('')}</dl></section>`;
   }).join('');
-  const playerTables=series.map(s=>{
-    const rows=s.rows.slice().reverse().map(row=>`<tr><th scope="row"><a href="#game/${row.game.id}">${row.number}경기 · ${row.game.date.slice(5).replace('-','/')}</a>${row.played ? '' : '<small class="no-appearance">해당 손 미등판</small>'}</th>${cols.map(c=>`<td class="${c === metric ? 'selected-stat' : ''}">${row.stats?.[c] ?? '—'}</td>`).join('')}</tr>`).join('');
-    return `<div class="trend-player-table"><h3 id="trend-table-${s.player.id}"><span class="player-key ${s.player.color}">${s.player.name}</span><span>${basisLabel} ${mode === 'batting' ? '타격' : '투구'} 기록</span></h3><div class="record-table-wrap" tabindex="0" aria-label="${s.player.name} ${basisLabel} 기록 상세 표"><table class="record-table game-stats-table" aria-labelledby="trend-table-${s.player.id}"><thead><tr><th scope="col">경기</th>${cols.map(statHeader).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
-  }).join('');
-  app.innerHTML=`<section class="container"><p class="eyebrow">SEASON PROGRESS · 2026</p><h1>기록 추이</h1><p class="subhead">한 경기씩 쌓이는 기록, 두 선수의 변화를 함께 살펴보세요.</p>
-    <div class="trend-controls">
+  app.innerHTML=`<section class="container stats-page"><header class="stats-page-heading"><div><p class="eyebrow">FAMILY LEAGUE / GAME LOGS</p><h1>기록 추이</h1><p class="subhead">매 경기의 성적과 시즌 기록이 쌓이는 과정.</p></div><span class="season-stamp">2026<span>SEASON</span></span></header>
+    ${segmentedLinks('trends',trendState,'mode',[['batting','타격 · HITTING'],['pitching','투구 · PITCHING']],'기록 분야')}
+    <div class="stats-filterbar">
       ${trendSelect('player','선수',[['all','두 선수 비교'],['yunjae','윤재'],['younghun','영훈']])}
-      ${trendSelect('mode','분야',[['batting','타격'],['pitching','투구']])}
-      ${trendSelect('basis','집계 기준',[['cumulative','경기 종료 시점 누적'],['game','그 경기만']])}
+      ${trendSelect('period','표시 기간',periodOptions())}
       ${mode === 'pitching' ? trendSelect('hand','투구 손',[['all','전체'],['R','우완'],['L','좌완']]) : ''}
-      ${trendSelect('metric','그래프 지표',trendMetrics[mode].map(key=>[key,`${key === 'K9' ? 'K/9' : key === 'BB9' ? 'BB/9' : key} · ${trendMetricLabel(key,mode)}`]))}
+      <a class="reset-link" href="#trends?mode=${mode}">필터 초기화</a>
     </div>
     <div class="trend-summaries">${cards}</div>
-    <section class="panel trend-panel"><div class="section-heading"><h2>${trendMetricLabel(metric,mode)} · ${basisLabel}</h2><div class="chart-legend">${series.map(s=>`<span class="player-key ${s.player.color}">${s.player.name}</span>`).join('')}</div></div>${renderTrendChart(series,metric)}<p class="table-hint">점을 누르면 경기 상세로 이동합니다.${mode === 'pitching' && hand !== 'all' ? (basis === 'cumulative' ? ' 빈 점은 해당 손 미등판으로 누적 기록이 유지된 경기입니다.' : ' 해당 손으로 던지지 않은 경기에는 점을 표시하지 않습니다.') : ''}</p></section>
-    <section class="panel trend-panel"><h2 class="panel-title">${basis === 'cumulative' ? '각 경기 종료 시점의 누적 기록' : '각 경기의 기록'}</h2><div class="trend-player-tables">${playerTables}</div><p class="table-hint">각 표를 좌우로 스크롤하면 모든 기록을 볼 수 있습니다. —는 기록 또는 계산에 필요한 분모가 없다는 뜻입니다.</p></section>
+    <div class="stats-table-heading"><div><h2>경기 로그 <span>GAME LOGS</span></h2><p>최신 경기부터 · 날짜를 누르면 박스스코어로 이동</p></div>${segmentedLinks('trends',trendState,'view',[['standard','기본 기록'],['expanded','상세 기록']],'표 항목')}</div>
+    ${segmentedLinks('trends',trendState,'basis',[['gamelog','경기 성적 + 누적 비율'],['cumulative','전체 누적 기록'],['game','그 경기만']],'집계 기준')}
+    <p class="log-explainer">${basis==='gamelog'?'안타·삼진·이닝 등은 그 경기의 성적, 파란색 비율 지표는 해당 경기 종료 시점까지의 시즌 누적입니다.':basis==='cumulative'?'각 경기 종료 시점의 누적 기록입니다. 모든 항목을 시즌 첫 경기부터 합산합니다.':'모든 항목은 해당 경기만의 성적입니다. 비율 지표도 그 경기 기록으로 계산합니다.'} 월 합계는 표시된 해당 월 경기만 집계합니다. 기간 필터를 바꿔도 시즌 누적은 초기화하지 않습니다.<span class="log-scroll-hint">← 각 표를 좌우로 밀어 전체 기록 보기 →</span></p>
+    <div class="trend-player-tables log-tables">${series.map(s=>renderLogTable(s,cols)).join('')}</div>
+    <p class="table-hint">각 표를 좌우로 스크롤하면 모든 기록을 볼 수 있습니다. @는 초 공격, vs는 말 공격입니다. —는 기록 또는 계산에 필요한 분모가 없다는 뜻입니다.</p>
+    <section class="panel trend-panel"><div class="section-heading"><h2>기록 그래프 · ${basisLabel}</h2>${trendSelect('metric','그래프 지표',trendMetrics[mode].map(key=>[key,`${statName(key)} · ${trendMetricLabel(key,mode)}`]))}<div class="chart-legend">${series.map(s=>`<span class="player-key ${s.player.color}">${s.player.name}</span>`).join('')}</div></div>${renderTrendChart(series,metric)}<p class="table-hint">${trendMetricLabel(metric,mode)} · ${basisLabel} 추이. 점을 누르면 경기 상세로 이동합니다.${mode==='pitching'&&hand!=='all'?' 빈 점은 해당 손 미등판으로 누적 비율이 유지된 경기입니다. 경기별 값은 미등판 시 표시하지 않습니다.':''}</p></section>
     <details class="panel stat-guide"><summary>스탯 계산 기준</summary><div class="rules"><p>AVG = 안타 ÷ 타수 · OBP = (안타 + 볼넷 + 사구) ÷ (타수 + 볼넷 + 사구 + 희생플라이) · SLG = 총 루타 ÷ 타수 · OPS = OBP + SLG</p><p>ERA = 자책점 × 27 ÷ 아웃 수 · WHIP = (피안타 + 볼넷) × 3 ÷ 아웃 수 · K/9 = 탈삼진 × 27 ÷ 아웃 수 · BB/9 = 볼넷 × 27 ÷ 아웃 수</p><p>투구 이닝은 3아웃 기준입니다. 3.1은 3⅓이닝, 3.2는 3⅔이닝입니다. 누적 비율은 경기별 비율의 평균이 아니라, 해당 시점까지의 원기록 합계로 다시 계산합니다. 좌·우완은 같은 선수의 투구 손에 따른 분류이며, 상대 타자의 타격 방향을 뜻하지 않습니다.</p></div></details>
   </section>`;
   setActive('trends');
@@ -395,12 +506,21 @@ function setActive(name) { document.querySelectorAll('.nav-link').forEach(x=>x.c
 function navigate() {
   const [path,query='']=location.hash.slice(1).split('?');
   const [name='schedule',id]=path.split('/');
-  if(name==='game') renderGame(id); else if(name==='players') renderPlayers(); else if(name==='player') renderPlayer(id); else if(name==='trends') renderTrends(query); else renderSchedule();
+  if(name==='game') renderGame(id); else if(name==='players') renderPlayers(query); else if(name==='player') renderPlayer(id); else if(name==='trends') renderTrends(query); else renderSchedule();
   if(restoreTrendFocus) { document.getElementById(restoreTrendFocus)?.focus({preventScroll:true}); restoreTrendFocus=''; }
   else window.scrollTo(0,0);
 }
 
 document.addEventListener('click', e => {
+  const sortButton=e.target.closest('[data-stat-sort]');
+  if(sortButton) {
+    const key=sortButton.dataset.statSort;
+    leadersState.dir=leadersState.sort===key?(leadersState.dir==='desc'?'asc':'desc'):['ERA','WHIP','BB9'].includes(key)?'asc':'desc';
+    leadersState.sort=key;
+    restoreTrendFocus=sortButton.id;
+    location.hash=`players?${new URLSearchParams(leadersState)}`;
+    return;
+  }
   const routeBtn = e.target.closest('[data-route]'); if(routeBtn){ route(routeBtn.dataset.route); return; }
   const gameEl = e.target.closest('[data-game]'); if(gameEl){ route('game',gameEl.dataset.game); return; }
   const playerEl = e.target.closest('[data-player]'); if(playerEl){ route('player',playerEl.dataset.player); return; }
@@ -408,8 +528,15 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => { if((e.key==='Enter'||e.key===' ') && e.target.matches('[data-game],[data-player]')) e.target.click(); });
 document.addEventListener('change', e => {
+  const leaderKey=e.target.dataset.leaders;
+  if(['period','hand'].includes(leaderKey)) {
+    leadersState[leaderKey]=e.target.value;
+    restoreTrendFocus=e.target.id;
+    location.hash=`players?${new URLSearchParams(leadersState)}`;
+    return;
+  }
   const key=e.target.dataset.trend;
-  if(!['player','mode','basis','hand','metric'].includes(key)) return;
+  if(!['player','mode','basis','hand','metric','period'].includes(key)) return;
   trendState[key]=e.target.value;
   if(key==='mode') { trendState.metric=trendMetrics[trendState.mode][0]; trendState.hand='all'; }
   restoreTrendFocus=e.target.id;
