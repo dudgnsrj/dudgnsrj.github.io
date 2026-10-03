@@ -11,7 +11,7 @@ const players = {
 
 const games = [
   {
-    id: '20260823-01', date: '2026-08-23', label: '8월 23일 일요일', no: 'GAME 01', innings: 9,
+    id: '20260823-01', date: '2026-08-23', label: '8월 23일 일요일', no: 'GAME 01', innings: 9, venue: '208동 놀이터',
     away: { player: 'yunjae', runs: [1,1,0,2,0,1,0,1,3], R: 9, H: 18, E: 0, batting: { AB:51,R:9,H:18,'2B':2,HR:3,RBI:9,BB:0,HBP:2,SO:13 }, pitching: { IP:'6.0',H:12,R:4,ER:4,BB:3,SO:2,HR:0 } },
     home: { player: 'younghun', runs: [0,0,0,0,2,0,2,0,0], R: 4, H: 12, E: 0, batting: { AB:30,R:4,H:12,'2B':2,HR:0,RBI:4,BB:3,HBP:0,SO:2 }, pitching: { IP:'12.0',H:18,R:9,ER:9,BB:0,SO:13,HR:3 } },
     note: '윤재가 1회 선두 홈런으로 앞서간 뒤 4회와 9회 홈런을 더해 첫 승을 기록했습니다.',
@@ -28,7 +28,7 @@ const games = [
     ]
   },
   {
-    id: '20260830-02', date: '2026-08-30', label: '8월 30일 일요일', no: 'GAME 02', innings: 9,
+    id: '20260830-02', date: '2026-08-30', label: '8월 30일 일요일', no: 'GAME 02', innings: 9, venue: '208동 놀이터',
     away: { player: 'yunjae', runs: [1,0,0,1,0,1,2,0,0], R: 5, H: 16, E: 0, batting: { AB:51,R:5,H:16,'2B':2,HR:1,RBI:5,BB:0,HBP:3,SO:11 }, pitching: { IP:'6.0',H:13,R:5,ER:5,BB:5,SO:0,HR:1 } },
     home: { player: 'younghun', runs: [0,0,0,2,3,0,0,0,0], R: 5, H: 13, E: 0, batting: { AB:29,R:5,H:13,'2B':2,HR:1,RBI:5,BB:5,HBP:0,SO:0 }, pitching: { IP:'12.0',H:16,R:5,ER:5,BB:0,SO:11,HR:1 } },
     note: '영훈이 5회 5–2로 앞섰지만 윤재가 6·7회 추격해 5–5 동점을 만들었습니다.',
@@ -45,7 +45,7 @@ const games = [
     ]
   },
   {
-    id: '20260906-03', date: '2026-09-06', label: '9월 6일 일요일', no: 'GAME 03', innings: 5,
+    id: '20260906-03', date: '2026-09-06', label: '9월 6일 일요일', no: 'GAME 03', innings: 5, venue: 'KIMM',
     away: { player: 'younghun', runs: [0,0,0,0,0], R: 0, H: 5, E: 1, batting: { AB:15,R:0,H:5,'2B':1,HR:0,RBI:0,BB:5,HBP:0,SO:2 }, pitching: { IP:'6.1',H:7,R:1,ER:0,BB:0,SO:7,HR:0 } },
     home: { player: 'yunjae', runs: [0,0,0,0,1], R: 1, H: 7, E: 0, batting: { AB:27,R:1,H:7,'2B':0,HR:0,RBI:1,BB:0,HBP:1,SO:7 }, pitching: { IP:'3.1',H:5,R:0,ER:0,BB:5,SO:2,HR:0 } },
     note: '5이닝제 경기. 윤재가 5회말 끝내기 안타로 1–0 승리를 기록했습니다. 윤재는 10아웃(3.1 IP), 영훈은 끝내기 시점까지 19아웃(6.1 IP)을 잡았습니다. 5회말 실책 출루를 아웃으로 복원하면 결승타 전에 4아웃이 되므로 영훈의 1실점은 비자책점입니다.',
@@ -58,7 +58,7 @@ const games = [
     ]
   },
   {
-    id: '20260920-04', date: '2026-09-20', label: '9월 20일 일요일', no: 'GAME 04', innings: 5,
+    id: '20260920-04', date: '2026-09-20', label: '9월 20일 일요일', no: 'GAME 04', innings: 5, venue: '서당골근린공원',
     away: { player: 'yunjae', runs: [0,0,1,1,2], R: 4, H: 9, E: 0, batting: { AB:30,R:4,H:9,'2B':1,HR:0,RBI:4,BB:1,HBP:2,SO:7 }, pitching: { IP:'3.1',H:4,R:3,ER:3,BB:2,SO:0,HR:1 } },
     home: {
       player: 'younghun', runs: [0,0,0,3,0], R: 3, H: 4, E: 1,
@@ -80,7 +80,7 @@ const games = [
     ]
   },
   {
-    id: '20260927-05', date: '2026-09-27', label: '9월 27일 일요일', no: 'GAME 05', innings: 3,
+    id: '20260927-05', date: '2026-09-27', label: '9월 27일 일요일', no: 'GAME 05', innings: 3, venue: '서당골근린공원',
     away: { player: 'yunjae', runs: [0,0,3], R: 3, H: 6, E: 0, batting: { AB:19,R:3,H:6,'2B':2,HR:0,RBI:2,BB:0,HBP:0,SO:11 }, pitching: { hand:'R',IP:'2.0',H:3,R:0,ER:0,BB:1,SO:2,HR:0 } },
     home: { player: 'younghun', runs: [0,0,0], R: 0, H: 3, E: 1, batting: { AB:9,R:0,H:3,'2B':1,HR:0,RBI:0,BB:1,HBP:0,SO:2 }, pitching: { hand:'R',IP:'4.0',H:6,R:3,ER:1,BB:0,SO:11,HR:0 } },
     note: '3이닝 경기. 윤재가 3회초 2루타, 실책, 적시타로 3득점하며 3–0으로 승리했습니다. 영훈은 전 이닝 우완으로 던져 12아웃(4.0 IP) 중 11개를 삼진으로 잡았습니다. 윤재는 6아웃(2.0 IP) 무실점입니다. 3회초 3아웃 이후의 실책을 아웃으로 복원하면 이닝이 끝나므로 이후 2득점은 비자책점으로 처리했습니다. 실책 득점에는 타점을 부여하지 않아 윤재의 타점은 2개입니다.',
@@ -91,7 +91,7 @@ const games = [
     ]
   },
   {
-    id: '20261001-06', date: '2026-10-01', label: '10월 1일 목요일', no: 'GAME 06', innings: 4,
+    id: '20261001-06', date: '2026-10-01', label: '10월 1일 목요일', no: 'GAME 06', innings: 4, venue: '어린이집 풋살장',
     away: { player: 'younghun', runs: [0,1,0,0], R: 1, H: 6, E: 0, batting: { AB:13,R:1,H:6,'2B':1,HR:0,RBI:1,BB:2,HBP:0,SO:1 }, pitching: { hand:'R',IP:'5.1',H:3,R:1,ER:1,BB:3,SO:11,HR:0 } },
     home: { player: 'yunjae', runs: [0,0,0,1], R: 1, H: 3, E: 0, batting: { AB:19,R:1,H:3,'2B':0,HR:0,RBI:1,BB:3,HBP:1,SO:11 }, pitching: { hand:'R',IP:'2.2',H:6,R:1,ER:1,BB:2,SO:1,HR:0 } },
     note: '4이닝 경기. 영훈이 2회초 적시타로 선취점을 냈고, 윤재가 4회말 적시타로 동점을 만들어 1–1 무승부로 마쳤습니다. 영훈은 우완 16아웃(5.1 IP), 11탈삼진, 1실점·1자책점이며 윤재는 8아웃(2.2 IP), 1실점·1자책점입니다. 4회초 병살은 타석 1개, 아웃 2개로 집계했습니다.',
@@ -103,7 +103,7 @@ const games = [
     ]
   },
   {
-    id: '20261003-07', date: '2026-10-03', label: '10월 3일 토요일', no: 'GAME 07', innings: 9,
+    id: '20261003-07', date: '2026-10-03', label: '10월 3일 토요일', no: 'GAME 07', innings: 9, venue: '208동 놀이터',
     away: { player: 'yunjae', runs: [0,0,2,0,0,0,1,2,0], R: 5, H: 15, E: 0, batting: { AB:53,R:5,H:15,'2B':2,HR:0,RBI:4,BB:2,HBP:2,SO:20 }, pitching: { hand:'R',IP:'6.0',H:10,R:5,ER:5,BB:13,SO:1,HR:0 } },
     home: { player: 'younghun', runs: [0,0,2,0,0,0,0,0,3], R: 5, H: 10, E: 3, batting: { AB:25,R:5,H:10,'2B':0,HR:0,RBI:5,BB:13,HBP:0,SO:1,SF:1 }, pitching: { hand:'R',IP:'12.0',H:15,R:5,ER:2,BB:2,SO:20,HR:0 } },
     note: '9이닝 경기. 윤재가 8회초 5–2로 앞섰지만 영훈이 9회말 3득점해 5–5 무승부로 마쳤습니다. 영훈은 우완 36아웃(12.0 IP), 20탈삼진이며 윤재는 18아웃(6.0 IP)입니다. 8회초 병살 뒤 누락됐던 삼진을 반영했습니다. 3회말 희생플라이는 타수에서 제외하고 출루율 분모에 포함했습니다. 실책은 타자 출루, 병살은 땅볼 병살로 해석해 집계했으며 8회초 병살 득점에는 타점을 부여하지 않았습니다. 자책점은 실책을 아웃으로 복원하는 기존 4아웃 기준과 통상적인 주자 진루를 적용해 영훈 2점(7회 1점·8회 1점), 윤재 5점으로 추정했습니다. 3회초 2득점과 8회초 병살 때 득점은 비자책점으로 처리했으며, 실제 실책·진루 상황에 따라 자책점은 정정될 수 있습니다.',
@@ -219,6 +219,7 @@ function recordAtGame(id, currentGame) {
 }
 function resultClass(side, opponent) { return side.R>opponent.R?'win':side.R<opponent.R?'loss':'draw'; }
 function resultLabel(side, opponent) { return side.R>opponent.R?'승':side.R<opponent.R?'패':'무'; }
+function renderVenue(g) { return `<p class="game-venue"><span>경기장</span>${g.venue || '미등록'}</p>`; }
 function resultLinescore(g) {
   return `<div class="result-line-scroll" tabindex="0" aria-label="${g.label} 이닝별 점수, 좌우 스크롤 가능"><table class="result-linescore"><caption class="sr-only">${g.label} 이닝별 점수</caption><thead><tr><th scope="col">선수</th>${Array.from({length:g.innings},(_,i)=>`<th scope="col">${i+1}</th>`).join('')}${['R','H','E'].map(c=>`<th scope="col" class="result-total">${c}</th>`).join('')}</tr></thead><tbody>${['away','home'].map(key=>`<tr><th scope="row">${player(g[key].player).name}</th>${g[key].runs.map(r=>`<td class="${r?'scoring-inning':''}">${r}</td>`).join('')}${['R','H','E'].map(c=>`<td class="result-total ${c==='R'?'run-total':''}">${g[key][c]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
@@ -233,6 +234,7 @@ function gameCard(g) {
     return `<div class="card-pitcher"><span class="result-tag ${resultClass(side,opponent)}">${resultLabel(side,opponent)}</span><div><a href="#player/${p.id}">${p.name}</a><span>${hands} · ${side.pitching.IP} IP · ${side.pitching.SO} K</span></div></div>`;
   }).join('');
   return `<article class="score-card" aria-labelledby="score-title-${g.id}" data-score-game="${g.id}"><header class="score-card-heading"><h2 id="score-title-${g.id}"><time datetime="${g.date}">${g.date.slice(5).replace('-','.')} <small>${['일','월','화','수','목','금','토'][new Date(`${g.date}T00:00:00`).getDay()]}</small></time></h2><span>${g.no}</span><span class="final-status">FINAL / ${g.innings}</span></header>
+    ${renderVenue(g)}
     <table class="card-score-table"><caption class="sr-only">${formatDate(g.date)} ${outcome(g)}, 득점·안타·실책</caption><thead><tr><th scope="col">${g.away.R===g.home.R?'무승부':'경기 종료'}</th><th scope="col" title="득점">R</th><th scope="col" title="안타">H</th><th scope="col" title="실책">E</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="card-pitching"><span class="card-section-label">이 경기 투구</span><div>${pitchers}</div></div>
     <details class="card-innings"><summary>이닝별 점수 <span aria-hidden="true">⌄</span></summary>${resultLinescore(g)}</details>
@@ -243,7 +245,7 @@ function gameCard(g) {
 function renderGame(id) {
   const g = games.find(x => x.id === id) || games[1], a = player(g.away.player), h = player(g.home.player);
   app.innerHTML = `<section class="container stats-page game-detail-page"><button class="back-btn" data-route="schedule">← 전체 경기 결과</button>
-    <header class="game-detail-heading"><div><p class="eyebrow">FAMILY LEAGUE / BOX SCORE</p><h1>경기 결과</h1><p class="subhead">${formatDate(g.date)} · ${g.no}</p></div><span class="final-status">FINAL / ${g.innings}</span></header>
+    <header class="game-detail-heading"><div><p class="eyebrow">FAMILY LEAGUE / BOX SCORE</p><h1>경기 결과</h1><p class="subhead">${formatDate(g.date)} · ${g.no}</p>${renderVenue(g)}</div><span class="final-status">FINAL / ${g.innings}</span></header>
     <section class="result-scoreboard" aria-label="${a.name} ${g.away.R} 대 ${h.name} ${g.home.R}, ${outcome(g)}"><div class="result-matchup">${['away','home'].map(key=>{
       const side=g[key],opponent=g[key==='away'?'home':'away'],p=player(side.player);
       return `<div class="result-contender ${resultClass(side,opponent)}"><span class="team-dot ${p.color}" aria-hidden="true">${p.initial}</span><div><a href="#player/${p.id}">${p.name}</a><small>${key==='away'?'AWAY · 초 공격':'HOME · 말 공격'}</small></div><strong>${side.R}</strong><span class="result-tag ${resultClass(side,opponent)}">${resultLabel(side,opponent)}</span></div>`;

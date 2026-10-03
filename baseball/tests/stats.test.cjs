@@ -26,6 +26,17 @@ const periods = data('periodOptions().map(([value])=>value)');
 const modes = ['batting', 'pitching'];
 const ids = ['yunjae', 'younghun'];
 const allGames = data('games');
+const expectedVenues = {
+  '20260823-01':'208동 놀이터', '20260830-02':'208동 놀이터', '20260906-03':'KIMM',
+  '20260920-04':'서당골근린공원', '20260927-05':'서당골근린공원',
+  '20261001-06':'어린이집 풋살장', '20261003-07':'208동 놀이터'
+};
+for (const [id, venue] of Object.entries(expectedVenues)) {
+  assert.equal(allGames.find(g=>g.id===id).venue,venue);
+  run(`renderGame('${id}')`);
+  assert(app.innerHTML.includes(`<span>경기장</span>${venue}`));
+}
+assert(run('renderVenue({})').includes('미등록'));
 const originalData = JSON.stringify(allGames);
 let checks = 0;
 
@@ -125,6 +136,7 @@ for (const game of allGames) {
   assert(card.includes(`href="#game/${game.id}"`));
   assert(card.includes(`href="#game/${game.id}?view=plays"`));
   assert(card.includes(`FINAL / ${game.innings}`));
+  assert(card.includes(`<span>경기장</span>${game.venue || '미등록'}`));
   assert(!card.includes('role="button"')); // Native links and disclosures remain independently operable.
   const tableRows = [...card.match(/<table class="card-score-table">([\s\S]*?)<\/table>/)[1].matchAll(/<tr class="score-team ([^"]+)">([\s\S]*?)<\/tr>/g)];
   assert.equal(tableRows.length,2);
