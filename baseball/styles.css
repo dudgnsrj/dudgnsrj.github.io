@@ -262,6 +262,82 @@ footer span:first-child { color: #fff; font-weight: 800; }
 .stats-page .trend-panel { border-radius: 3px; box-shadow: none; }
 .stats-page .section-heading .trend-control { flex: 0 1 230px; }
 
+/* Scoreboard cards keep all games on screen, without date-by-date paging. */
+.scores-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 18px 0; margin-bottom: 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.scores-toolbar strong { font-size: 15px; }
+.scores-toolbar strong span { margin-left: 7px; color: #22568b; font-family: Archivo,sans-serif; }
+.scores-toolbar p { margin: 0; color: var(--muted); font-size: 12px; }
+.scores-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; align-items: start; }
+.score-card { min-width: 0; border: 1px solid var(--line); border-radius: 7px; background: #fff; box-shadow: 0 2px 6px rgba(13,30,48,.06); overflow: hidden; }
+.score-card-heading { display: flex; align-items: center; gap: 12px; margin: 0 16px; padding: 17px 0 13px; border-bottom: 1px solid #edf0f3; }
+.score-card-heading h2 { margin: 0; font: 800 16px Archivo,sans-serif; }
+.score-card-heading time small { margin-left: 4px; color: var(--muted); font: 500 10px "Noto Sans KR",sans-serif; }
+.score-card-heading > span:not(.final-status) { color: var(--muted); font: 600 9px Archivo,sans-serif; }
+.final-status { display: inline-block; padding: 5px 8px; border: 1px solid #c9d5e0; border-radius: 3px; background: #f2f6fa; color: #25486a; font: 800 10px Archivo,sans-serif; white-space: nowrap; }
+.score-card-heading .final-status { margin-left: auto; }
+.card-score-table { width: calc(100% - 32px); margin: 10px 16px 17px; border-collapse: collapse; font: 600 14px Archivo,sans-serif; }
+.card-score-table thead th { height: 26px; color: var(--muted); font-size: 10px; font-weight: 500; }
+.card-score-table thead th:first-child { text-align: left; font-family: "Noto Sans KR",sans-serif; }
+.card-score-table td { width: 35px; text-align: center; }
+.card-score-table tbody th { padding: 8px 0; font-weight: 600; }
+.card-score-table tbody tr + tr th, .card-score-table tbody tr + tr td { border-top: 1px solid #f2f4f7; }
+.score-player { display: flex; align-items: center; gap: 9px; text-align: left; }
+.score-player .team-dot { flex: 0 0 32px; width: 32px; height: 32px; font-size: 12px; }
+.score-player a { color: var(--ink); font: 800 16px "Noto Sans KR",sans-serif; text-decoration: none; }
+.score-player a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.score-player small { display: block; margin-top: 4px; color: var(--muted); font: 400 9px "Noto Sans KR",sans-serif; white-space: nowrap; }
+.winner-indicator { margin-left: auto; padding-right: 5px; color: #235b88; font-size: 8px; }
+.card-score-table .card-runs { color: var(--navy); font-size: 25px; font-weight: 800; }
+.card-score-table .loss .card-runs { color: #6d7784; font-weight: 600; }
+.card-pitching { margin: 0 16px; padding: 14px 0; border-top: 1px solid #edf0f3; }
+.card-section-label { display: block; margin-bottom: 10px; color: var(--muted); font-size: 9px; }
+.card-pitching > div { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.card-pitcher { display: flex; gap: 7px; align-items: baseline; }
+.card-pitcher .result-tag { margin: 0; }
+.card-pitcher a { color: #294563; font-size: 12px; font-weight: 700; text-decoration: none; }
+.card-pitcher a:hover { text-decoration: underline; }
+.card-pitcher div > span { display: block; margin-top: 5px; color: var(--muted); font: 400 10px "Noto Sans KR",sans-serif; line-height: 1.7; }
+.card-innings { border-top: 1px solid #edf0f3; }
+.card-innings summary { display: flex; justify-content: space-between; padding: 12px 16px; color: #5a6f84; font-size: 11px; cursor: pointer; list-style: none; }
+.card-innings summary::-webkit-details-marker { display: none; }
+.card-innings[open] summary span { transform: rotate(180deg); }
+.card-innings summary:hover { background: #f5f8fb; }
+.score-card-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); border-top: 1px solid var(--line); }
+.score-card-actions a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; color: #22568b; text-decoration: none; font-size: 11px; font-weight: 700; }
+.score-card-actions a + a { border-left: 1px solid #edf0f3; }
+.score-card-actions a:hover { color: #fff; background: #153b69; }
+.score-key { margin: 18px 0 0; }
+.result-line-scroll { overflow-x: auto; max-width: 100%; }
+.result-linescore { width: 100%; min-width: 540px; border-collapse: collapse; text-align: center; font: 600 12px Archivo,sans-serif; }
+.result-linescore th, .result-linescore td { padding: 12px 10px; border-top: 1px solid var(--line); }
+.result-linescore thead th { background: #f0f3f7; color: #586b80; font-weight: 500; font-size: 10px; }
+.result-linescore th:first-child { position: sticky; left: 0; z-index: 1; min-width: 70px; text-align: left; padding-left: 16px; font-family: "Noto Sans KR",sans-serif; box-shadow: 1px 0 0 var(--line); }
+.result-linescore tbody th { background: #fff; }
+.result-linescore .result-total { background: #f0f4f8; font-weight: 700; }
+.result-linescore .run-total { color: #123e6c; font-weight: 800; }
+.result-linescore .scoring-inning { color: #22568b; font-weight: 800; }
+.card-innings .result-linescore { min-width: 480px; font-size: 11px; }
+.card-innings .result-linescore th, .card-innings .result-linescore td { padding: 10px 7px; }
+.game-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 10px 0 25px; }
+.game-detail-heading h1 { font-size: 34px; }
+.game-detail-heading .subhead { margin-bottom: 0; font-size: 13px; }
+.result-scoreboard { border: 1px solid var(--line); border-radius: 5px; background: #fff; overflow: hidden; }
+.result-matchup { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 36px; align-items: center; padding: 30px 40px; }
+.result-contender { display: flex; align-items: center; gap: 15px; }
+.result-contender .team-dot { width: 48px; height: 48px; font-size: 18px; flex: 0 0 48px; }
+.result-contender a { color: var(--navy); font-size: 24px; font-weight: 800; text-decoration: none; }
+.result-contender small { display: block; margin-top: 5px; color: var(--muted); font: 500 10px Archivo,"Noto Sans KR",sans-serif; }
+.result-contender strong { margin-left: auto; font: 800 48px Archivo,sans-serif; }
+.result-contender.loss strong { color: var(--muted); }
+.result-versus { color: var(--muted); font: 700 10px Archivo,sans-serif; letter-spacing: .12em; }
+.game-detail-page .panel { border-radius: 5px; box-shadow: none; }
+.game-detail-page .detail-grid > * { min-width: 0; }
+#game-plays { scroll-margin-top: 20px; }
+
+@media (min-width: 781px) and (max-width: 1120px) {
+  .scores-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
 @media (max-width: 780px) {
   .site-header { height: 68px; padding: 0 15px; gap: 8px; }
   .brand strong { font-size: 15px; }
@@ -303,6 +379,16 @@ footer span:first-child { color: #fff; font-weight: 800; }
   .log-summary dl { gap: 6px; }
   .log-summary dd { font-size: 19px; }
   .log-tables { padding: 0; }
+  .scores-grid { grid-template-columns: minmax(0,1fr); gap: 16px; }
+  .scores-toolbar { margin-bottom: 16px; }
+  .scores-toolbar p { font-size: 11px; }
+  .result-matchup { padding: 22px 16px; grid-template-columns: 1fr; gap: 16px; }
+  .result-versus { display: none; }
+  .result-contender { gap: 12px; }
+  .result-contender .team-dot { width: 38px; height: 38px; flex-basis: 38px; font-size: 14px; }
+  .result-contender a { font-size: 20px; }
+  .result-contender strong { font-size: 35px; }
+  .game-detail-heading h1 { font-size: 28px; }
 }
 
 @media (max-width: 400px) {

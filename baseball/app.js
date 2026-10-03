@@ -198,35 +198,61 @@ const outcome = game => game.away.R === game.home.R ? '무승부' : `${player(ga
 
 function renderSchedule() {
   const orderedGames = games.slice().sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
-  app.innerHTML = `<section class="container">
-    <p class="eyebrow">FAMILY LEAGUE · 2026 SEASON</p><h1>경기 일정과 결과</h1><p class="subhead">우리 가족이 함께한 모든 경기를 한곳에 기록합니다.</p>
-    <div class="schedule-summary"><strong>전체 ${orderedGames.length}경기</strong><span>최신 경기순</span></div>
-    ${orderedGames.length ? `<div class="game-list">${orderedGames.map(gameCard).join('')}</div>` : '<div class="schedule-empty">아직 기록된 경기가 없습니다.</div>'}
+  app.innerHTML = `<section class="container stats-page scores-page">
+    <header class="stats-page-heading"><div><p class="eyebrow">FAMILY LEAGUE / SCORES</p><h1>경기 결과</h1><p class="subhead">함께한 모든 경기, 한눈에 보는 스코어보드.</p></div><span class="season-stamp">2026<span>SEASON</span></span></header>
+    <div class="scores-toolbar"><strong>전체 경기 <span>${orderedGames.length}</span></strong><p>최신 경기순 · 날짜 이동 없이 모든 경기 표시</p></div>
+    ${orderedGames.length ? `<div class="scores-grid">${orderedGames.map(gameCard).join('')}</div>` : '<div class="schedule-empty">아직 기록된 경기가 없습니다.</div>'}
+    <p class="stats-footnote score-key">R 득점 · H 안타 · E 실책. 선수명 아래 승–패–무는 해당 경기 종료 시점의 누적 전적입니다. 투구 IP는 3아웃 환산 이닝입니다.</p>
     <div class="summary-strip"><div class="summary-stat"><strong>${games.length}</strong><span>총 경기</span></div><div class="summary-stat"><strong>${players.yunjae.pitching.W}–${players.yunjae.pitching.L}–${players.yunjae.pitching.T}</strong><span>윤재 승–패–무</span></div><div class="summary-stat"><strong>${games.reduce((total, g) => total + g.away.R + g.home.R, 0)}</strong><span>두 선수 총 득점</span></div></div>
   </section>`;
   setActive('schedule');
 }
 
+function recordAtGame(id, currentGame) {
+  const record={W:0,L:0,T:0};
+  for(const g of games) {
+    if(g.date>currentGame.date || (g.date===currentGame.date && g.id>currentGame.id)) continue;
+    const side=g.away.player===id?g.away:g.home, opponent=side===g.away?g.home:g.away;
+    record[side.R>opponent.R?'W':side.R<opponent.R?'L':'T']++;
+  }
+  return record;
+}
+function resultClass(side, opponent) { return side.R>opponent.R?'win':side.R<opponent.R?'loss':'draw'; }
+function resultLabel(side, opponent) { return side.R>opponent.R?'승':side.R<opponent.R?'패':'무'; }
+function resultLinescore(g) {
+  return `<div class="result-line-scroll" tabindex="0" aria-label="${g.label} 이닝별 점수, 좌우 스크롤 가능"><table class="result-linescore"><caption class="sr-only">${g.label} 이닝별 점수</caption><thead><tr><th scope="col">선수</th>${Array.from({length:g.innings},(_,i)=>`<th scope="col">${i+1}</th>`).join('')}${['R','H','E'].map(c=>`<th scope="col" class="result-total">${c}</th>`).join('')}</tr></thead><tbody>${['away','home'].map(key=>`<tr><th scope="row">${player(g[key].player).name}</th>${g[key].runs.map(r=>`<td class="${r?'scoring-inning':''}">${r}</td>`).join('')}${['R','H','E'].map(c=>`<td class="result-total ${c==='R'?'run-total':''}">${g[key][c]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
 function gameCard(g) {
-  const a = player(g.away.player), h = player(g.home.player);
-  return `<article class="game-card" data-game="${g.id}" tabindex="0" role="button" aria-label="${formatDate(g.date)} ${a.name} 대 ${h.name} 경기 상세">
-    <div class="game-meta"><span class="status">FINAL</span><time class="game-date" datetime="${g.date}">${g.date.replaceAll('-','.')}<small>${['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][new Date(`${g.date}T00:00:00`).getDay()]}</small></time><span class="game-no">${g.no} · ${g.innings}이닝</span></div>
-    <div class="matchup"><div class="team-row"><span class="team-dot ${a.color}">${a.initial}</span><span class="team-name">${a.name}<small>AWAY · 초 공격</small></span><span class="score">${g.away.R}</span></div><div class="team-row"><span class="team-dot ${h.color}">${h.initial}</span><span class="team-name">${h.name}<small>HOME · 말 공격</small></span><span class="score">${g.home.R}</span></div></div>
-    <div class="game-result"><div><strong>${outcome(g)}</strong><span>박스스코어 보기 →</span></div></div>
+  const rows=['away','home'].map(key=>{
+    const side=g[key],opponent=g[key==='away'?'home':'away'],p=player(side.player),record=recordAtGame(p.id,g);
+    return `<tr class="score-team ${resultClass(side,opponent)}"><th scope="row"><div class="score-player"><span class="team-dot ${p.color}" aria-hidden="true">${p.initial}</span><div><a href="#player/${p.id}">${p.name}</a><small>${key==='away'?'초':'말'} 공격 · ${record.W}–${record.L}–${record.T}</small></div><span class="winner-indicator" aria-label="${resultLabel(side,opponent)}">${side.R>opponent.R?'◀':''}</span></div></th><td class="card-runs">${side.R}</td><td>${side.H}</td><td>${side.E}</td></tr>`;
+  }).join('');
+  const pitchers=['away','home'].map(key=>{
+    const side=g[key],opponent=g[key==='away'?'home':'away'],p=player(side.player);
+    const hands=side.pitchingStints?'우·좌완':side.pitching.hand==='L'?'좌완':'우완';
+    return `<div class="card-pitcher"><span class="result-tag ${resultClass(side,opponent)}">${resultLabel(side,opponent)}</span><div><a href="#player/${p.id}">${p.name}</a><span>${hands} · ${side.pitching.IP} IP · ${side.pitching.SO} K</span></div></div>`;
+  }).join('');
+  return `<article class="score-card" aria-labelledby="score-title-${g.id}" data-score-game="${g.id}"><header class="score-card-heading"><h2 id="score-title-${g.id}"><time datetime="${g.date}">${g.date.slice(5).replace('-','.')} <small>${['일','월','화','수','목','금','토'][new Date(`${g.date}T00:00:00`).getDay()]}</small></time></h2><span>${g.no}</span><span class="final-status">FINAL / ${g.innings}</span></header>
+    <table class="card-score-table"><caption class="sr-only">${formatDate(g.date)} ${outcome(g)}, 득점·안타·실책</caption><thead><tr><th scope="col">${g.away.R===g.home.R?'무승부':'경기 종료'}</th><th scope="col" title="득점">R</th><th scope="col" title="안타">H</th><th scope="col" title="실책">E</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="card-pitching"><span class="card-section-label">이 경기 투구</span><div>${pitchers}</div></div>
+    <details class="card-innings"><summary>이닝별 점수 <span aria-hidden="true">⌄</span></summary>${resultLinescore(g)}</details>
+    <div class="score-card-actions"><a href="#game/${g.id}" aria-label="${g.label} 박스스코어">박스스코어 <span aria-hidden="true">↗</span></a><a href="#game/${g.id}?view=plays" aria-label="${g.label} 플레이 기록">플레이 기록 <span aria-hidden="true">↗</span></a></div>
   </article>`;
 }
 
 function renderGame(id) {
   const g = games.find(x => x.id === id) || games[1], a = player(g.away.player), h = player(g.home.player);
-  const inningHeaders = Array.from({length:g.innings},(_,i)=>`<th>${i+1}</th>`).join('');
-  const row = side => `<tr><td>${player(g[side].player).name}</td>${g[side].runs.map(x=>`<td>${x}</td>`).join('')}<td class="total">${g[side].R}</td><td class="total">${g[side].H}</td><td class="total">${g[side].E}</td></tr>`;
-  app.innerHTML = `<section class="container"><button class="back-btn" data-route="schedule">← 경기 목록</button>
-    <div class="scoreboard"><div class="scoreboard-head"><strong>${g.no} · FINAL</strong><span>${g.label}</span></div><div class="line-scroll"><table class="line-score"><thead><tr><th>TEAM</th>${inningHeaders}<th class="total">R</th><th class="total">H</th><th class="total">E</th></tr></thead><tbody>${row('away')}${row('home')}</tbody></table></div><div class="final-call"><span>경기 종료</span><strong>${a.name} ${g.away.R} — ${g.home.R} ${h.name}</strong></div></div>
+  app.innerHTML = `<section class="container stats-page game-detail-page"><button class="back-btn" data-route="schedule">← 전체 경기 결과</button>
+    <header class="game-detail-heading"><div><p class="eyebrow">FAMILY LEAGUE / BOX SCORE</p><h1>경기 결과</h1><p class="subhead">${formatDate(g.date)} · ${g.no}</p></div><span class="final-status">FINAL / ${g.innings}</span></header>
+    <section class="result-scoreboard" aria-label="${a.name} ${g.away.R} 대 ${h.name} ${g.home.R}, ${outcome(g)}"><div class="result-matchup">${['away','home'].map(key=>{
+      const side=g[key],opponent=g[key==='away'?'home':'away'],p=player(side.player);
+      return `<div class="result-contender ${resultClass(side,opponent)}"><span class="team-dot ${p.color}" aria-hidden="true">${p.initial}</span><div><a href="#player/${p.id}">${p.name}</a><small>${key==='away'?'AWAY · 초 공격':'HOME · 말 공격'}</small></div><strong>${side.R}</strong><span class="result-tag ${resultClass(side,opponent)}">${resultLabel(side,opponent)}</span></div>`;
+    }).join('<div class="result-versus">FINAL</div>')}</div>${resultLinescore(g)}</section>
     <div class="detail-grid"><div>
       <section class="panel"><h2 class="panel-title">타자 기록 · 이 경기</h2>${boxTable(g,'batting',battingColumns)}<p class="table-hint">좌우로 스크롤하면 모든 기록을 볼 수 있습니다.</p></section>
       <section class="panel" style="margin-top:22px"><h2 class="panel-title">투수 기록 · 이 경기</h2>${boxTable(g,'pitching',pitchingColumns)}<p class="table-hint">ERA·WHIP은 이 경기의 3아웃 환산 이닝 기준입니다.</p></section>
       <section class="panel" style="margin-top:22px"><h2 class="panel-title">경기 메모</h2><div class="rules"><p><strong>${g.note}</strong></p><p>가족 리그 특별 규칙: 윤재 공격은 이닝당 4아웃, 영훈 공격은 이닝당 2아웃으로 진행했습니다. 투수 IP는 전체 아웃카운트를 표준 3아웃제 이닝으로 환산했습니다.</p></div></section>
-    </div><aside class="panel"><h2 class="panel-title">플레이 기록</h2><div class="play-list">${g.plays.map(p=>`<div class="inning"><div class="inning-head"><strong>${p[0]} ${p[1]} 공격</strong><span>${p[1]===a.name?'초':'말'}</span></div><p>${p[2]}</p></div>`).join('')}</div></aside></div>
+    </div><aside class="panel" id="game-plays"><h2 class="panel-title">플레이 기록</h2><div class="play-list">${g.plays.map(p=>`<div class="inning"><div class="inning-head"><strong>${p[0]} ${p[1]} 공격</strong><span>${p[1]===a.name?'초':'말'}</span></div><p>${p[2]}</p></div>`).join('')}</div></aside></div>
   </section>`;
   setActive('schedule');
 }
@@ -507,7 +533,8 @@ function navigate() {
   const [path,query='']=location.hash.slice(1).split('?');
   const [name='schedule',id]=path.split('/');
   if(name==='game') renderGame(id); else if(name==='players') renderPlayers(query); else if(name==='player') renderPlayer(id); else if(name==='trends') renderTrends(query); else renderSchedule();
-  if(restoreTrendFocus) { document.getElementById(restoreTrendFocus)?.focus({preventScroll:true}); restoreTrendFocus=''; }
+  if(name==='game' && new URLSearchParams(query).get('view')==='plays') { restoreTrendFocus=''; document.getElementById('game-plays')?.scrollIntoView({block:'start'}); }
+  else if(restoreTrendFocus) { document.getElementById(restoreTrendFocus)?.focus({preventScroll:true}); restoreTrendFocus=''; }
   else window.scrollTo(0,0);
 }
 

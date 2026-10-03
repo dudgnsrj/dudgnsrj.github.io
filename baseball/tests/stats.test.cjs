@@ -6,11 +6,12 @@ const vm = require('node:vm');
 
 const app = { innerHTML: '' };
 const listeners = {};
+let scrolledElement = '';
 const context = {
   document: {
     querySelector: () => app,
     querySelectorAll: () => [],
-    getElementById: () => ({ focus() {} }),
+    getElementById: id => ({ focus() {}, scrollIntoView() { scrolledElement = id; } }),
     addEventListener: (type, handler) => { listeners[type] = handler; }
   },
   window: { addEventListener() {}, scrollTo() {} },
@@ -116,5 +117,36 @@ assert(context.location.hash.includes('player=younghun'));
 for (const game of allGames) { run(`renderGame('${game.id}')`); assert(!/undefined|NaN/.test(app.innerHTML)); }
 for (const id of ids) for (const mode of modes) { run(`recordMode='${mode}'; renderPlayer('${id}')`); assert(!/undefined|NaN/.test(app.innerHTML)); }
 run('renderSchedule()');
+const orderedGames = [...allGames].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+assert.deepEqual([...app.innerHTML.matchAll(/data-score-game="([^"]+)"/g)].map(m=>m[1]), orderedGames.map(g=>g.id));
+assert.equal((app.innerHTML.match(/class="score-card"/g)||[]).length, allGames.length);
+for (const game of allGames) {
+  const card = run(`gameCard(games.find(g=>g.id==='${game.id}'))`);
+  assert(card.includes(`href="#game/${game.id}"`));
+  assert(card.includes(`href="#game/${game.id}?view=plays"`));
+  assert(card.includes(`FINAL / ${game.innings}`));
+  assert(!card.includes('role="button"')); // Native links and disclosures remain independently operable.
+  const tableRows = [...card.match(/<table class="card-score-table">([\s\S]*?)<\/table>/)[1].matchAll(/<tr class="score-team ([^"]+)">([\s\S]*?)<\/tr>/g)];
+  assert.equal(tableRows.length,2);
+  ['away','home'].forEach((key,index)=>{
+    const side=game[key],opponent=game[key==='away'?'home':'away'];
+    assert.deepEqual([...tableRows[index][2].matchAll(/<td[^>]*>(\d+)<\/td>/g)].map(m=>Number(m[1])),[side.R,side.H,side.E]);
+    assert.equal(tableRows[index][1],side.R>opponent.R?'win':side.R<opponent.R?'loss':'draw');
+    assert(card.includes(`${side.pitching.IP} IP · ${side.pitching.SO} K`));
+    const actual=data(`recordAtGame('${side.player}',games.find(g=>g.id==='${game.id}'))`);
+    const expected={W:0,L:0,T:0};
+    for(const prior of allGames.filter(g=>g.date<game.date||(g.date===game.date&&g.id<=game.id))) {
+      const self=prior.away.player===side.player?prior.away:prior.home,other=self===prior.away?prior.home:prior.away;
+      expected[self.R>other.R?'W':self.R<other.R?'L':'T']++;
+    }
+    assert.deepEqual(actual,expected);
+  });
+  const lines=run(`resultLinescore(games.find(g=>g.id==='${game.id}'))`);
+  assert.equal((lines.match(/scope="col"/g)||[]).length,game.innings+4);
+  assert.equal((lines.match(/scope="row"/g)||[]).length,2);
+}
+context.location.hash=`#game/${allGames.at(-1).id}?view=plays`;
+run('navigate()');
+assert.equal(scrolledElement,'game-plays');
 assert.equal(JSON.stringify(data('games')), originalData);
-console.log(`PASS: ${checks} leaderboard/log combinations; cumulative denominators, periods, hand splits, sorting, routes, and original data.`);
+console.log(`PASS: ${checks} leaderboard/log combinations plus ${allGames.length} scorecards; totals, chronological records, line scores, links, routes, and original data.`);
