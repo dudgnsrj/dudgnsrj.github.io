@@ -39,6 +39,25 @@ for (const [id, venue] of Object.entries(expectedVenues)) {
 }
 assert(run('renderVenue({})').includes('미등록'));
 const originalData = JSON.stringify(allGames);
+// 2026-10-04: four outs per top half, two per bottom half; 1–1 after three.
+const october4=allGames.find(g=>g.id==='20261004-08');
+assert.equal(october4.innings,3);
+assert.equal(october4.away.player,'yunjae');
+assert.equal(october4.home.player,'younghun');
+assert.deepEqual(october4.away.runs,[0,0,1]);
+assert.deepEqual(october4.home.runs,[0,1,0]);
+assert.deepEqual(october4.away.batting,{AB:15,R:1,H:3,'2B':0,HR:0,RBI:1,BB:2,HBP:0,SO:7});
+assert.deepEqual(october4.home.batting,{AB:9,R:1,H:3,'2B':1,HR:0,RBI:1,BB:3,HBP:0,SO:1});
+for(const [key,outs,strikeouts,walks] of [['away',6,1,3],['home',12,7,2]]) {
+  const p=october4[key].pitching;
+  assert.equal(run(`inningsToOuts('${p.IP}')`),outs);
+  assert.equal(p.SO,strikeouts);
+  assert.equal(p.BB,walks);
+  assert.equal(p.H,3);
+  assert.equal(p.R,1);
+  assert.equal(p.ER,1);
+}
+assert.equal(october4.plays.length,6);
 let checks = 0;
 
 for (const id of ids) {
