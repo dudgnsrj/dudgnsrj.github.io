@@ -200,4 +200,40 @@ context.location.hash=`#game/${allGames.at(-1).id}?view=plays`;
 run('navigate()');
 assert.equal(scrolledElement,'game-plays');
 assert.equal(JSON.stringify(data('games')), originalData);
+
+// Phone layout (max-width 600px): the same records rendered as cards, without wide tables.
+const phoneApp = { innerHTML: '' };
+const phoneListeners = {};
+const phoneContext = {
+  document: { querySelector: () => phoneApp, querySelectorAll: () => [], getElementById: () => null, addEventListener: (type, handler) => { phoneListeners[type] = handler; } },
+  window: { addEventListener() {}, scrollTo() {}, matchMedia: query => ({ matches: query === '(max-width: 600px)', addEventListener() {} }) },
+  location: { hash: '#schedule' },
+  URLSearchParams
+};
+vm.createContext(phoneContext);
+for (const name of ['sabermetrics.js', 'app.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', name), 'utf8'), phoneContext);
+const phoneRun = expression => vm.runInContext(expression, phoneContext);
+const phoneHtml = expression => { phoneRun(expression); const html = phoneApp.innerHTML; assert(!/undefined|NaN|Infinity/.test(html), expression); assert(!html.includes('<table class="record-table') && !html.includes('box-table'), expression); return html; };
+const phoneSchedule = phoneHtml('renderSchedule()');
+assert.deepEqual([...phoneSchedule.matchAll(/data-score-game="([^"]+)"/g)].map(m=>m[1]), orderedGames.map(g=>g.id));
+for (const game of allGames) {
+  assert(phoneSchedule.includes(`<a class="m-game-card" href="#game/${game.id}"`));
+  const html = phoneHtml(`renderGame('${game.id}')`);
+  const linescore = html.match(/<table class="m-linescore"[\s\S]*?<\/table>/)[0];
+  assert.equal((linescore.match(/scope="col"/g)||[]).length, game.innings+4);
+  for (const key of ['away','home']) assert(linescore.includes(`<td class="m-total run-total">${game[key].R}</td>`));
+  assert.equal((html.match(/<details class="m-inning">/g)||[]).length, new Set(game.plays.map(p=>p[0])).size);
+  assert(html.includes('id="game-plays"') && html.includes(`<span>경기장</span>${game.venue}`));
+}
+for (const id of ids) for (const mode of modes) assert.equal((phoneHtml(`recordMode='${mode}'; renderPlayer('${id}')`).match(/class="m-log-head"/g)||[]).length, allGames.length);
+for (const mode of modes) for (const view of ['standard', 'expanded']) assert.equal((phoneHtml(`renderPlayers('mode=${mode}&view=${view}')`).match(/<li class="m-card">/g)||[]).length, 2);
+phoneListeners.change({target:{dataset:{leaders:'sort'},value:'ERA',id:'leaders-sort'}});
+assert(phoneContext.location.hash.includes('sort=ERA') && phoneContext.location.hash.includes('dir=asc'));
+for (const mode of modes) for (const basis of ['gamelog', 'cumulative', 'game']) for (const player of ['all', ...ids]) {
+  const html = phoneHtml(`renderTrends('${new URLSearchParams({mode, basis, player})}')`);
+  const expected = allGames.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id)).map(g=>g.id).reverse();
+  assert.deepEqual([...html.matchAll(/data-log-game="([^"]+)"/g)].map(m=>m[1]), (player === 'all' ? ids : [player]).flatMap(() => expected));
+}
+assert.equal((phoneHtml('renderParks()').match(/<li class="m-card">/g)||[]).length, phoneRun('estimateParks(games).length'));
+assert.equal(JSON.stringify(JSON.parse(JSON.stringify(phoneRun('games')))), originalData);
 console.log(`PASS: ${checks} leaderboard/log combinations plus ${allGames.length} scorecards; totals, chronological records, line scores, links, routes, and original data.`);
