@@ -30,7 +30,8 @@ const allGames = data('games');
 const expectedVenues = {
   '20260823-01':'208동 놀이터', '20260830-02':'208동 놀이터', '20260906-03':'KIMM',
   '20260920-04':'서당골근린공원', '20260927-05':'서당골근린공원',
-  '20261001-06':'어린이집 풋살장', '20261003-07':'208동 놀이터'
+  '20261001-06':'어린이집 풋살장', '20261003-07':'208동 놀이터',
+  '20261004-08':'208동 놀이터', '20261009-09':'서당골근린공원'
 };
 for (const [id, venue] of Object.entries(expectedVenues)) {
   assert.equal(allGames.find(g=>g.id===id).venue,venue);
@@ -58,6 +59,24 @@ for(const [key,outs,strikeouts,walks] of [['away',6,1,3],['home',12,7,2]]) {
   assert.equal(p.ER,1);
 }
 assert.equal(october4.plays.length,6);
+// 2026-10-09: Younghun bats top (2 outs), Yunjae bottom (4 outs); Yunjae wins 6–4, bottom 6th not played.
+const october9=allGames.find(g=>g.id==='20261009-09');
+assert.equal(october9.innings,6);
+assert.equal(october9.away.player,'younghun');
+assert.equal(october9.home.player,'yunjae');
+assert.deepEqual(october9.away.runs,[0,0,0,0,1,3]);
+assert.deepEqual(october9.home.runs,[0,0,2,2,2,'X']);
+assert.deepEqual(october9.away.batting,{AB:20,R:4,H:9,'2B':5,'3B':1,HR:1,RBI:4,BB:1,HBP:0,SO:2,SF:1});
+assert.deepEqual(october9.home.batting,{AB:30,R:6,H:9,'2B':3,HR:1,RBI:6,BB:3,HBP:1,SO:7});
+for (const [key,outs,strikeouts,walks,hits,runs,earned] of [['away',20,7,3,9,6,5],['home',12,2,1,9,4,4]]) {
+  const p=october9[key].pitching;
+  assert.equal(run(`inningsToOuts('${p.IP}')`),outs);
+  assert.equal(p.SO,strikeouts); assert.equal(p.BB,walks); assert.equal(p.H,hits); assert.equal(p.R,runs); assert.equal(p.ER,earned);
+}
+for (const key of ['away','home']) assert.equal(october9[key].runs.filter(r=>typeof r==='number').reduce((a,b)=>a+b,0),october9[key].R);
+assert.equal(october9.plays.length,11);
+run(`renderGame('20261009-09')`);
+assert(app.innerHTML.includes('<td class="">X</td>'));
 let checks = 0;
 
 for (const id of ids) {

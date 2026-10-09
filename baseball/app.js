@@ -120,14 +120,28 @@ const games = [
     ]
   },
   {
-    id: '20261004-08', date: '2026-10-04', label: '10월 4일 일요일', no: 'GAME 08', innings: 3,
+    id: '20261004-08', date: '2026-10-04', label: '10월 4일 일요일', no: 'GAME 08', innings: 3, venue: '208동 놀이터',
     away: { player: 'yunjae', runs: [0,0,1], R: 1, H: 3, E: 0, batting: { AB:15,R:1,H:3,'2B':0,HR:0,RBI:1,BB:2,HBP:0,SO:7 }, pitching: { hand:'R',IP:'2.0',H:3,R:1,ER:1,BB:3,SO:1,HR:0 } },
     home: { player: 'younghun', runs: [0,1,0], R: 1, H: 3, E: 0, batting: { AB:9,R:1,H:3,'2B':1,HR:0,RBI:1,BB:3,HBP:0,SO:1 }, pitching: { hand:'R',IP:'4.0',H:3,R:1,ER:1,BB:2,SO:7,HR:0 } },
-    note: '3이닝 경기. 기존 공격 아웃 규칙에 따라 초 공격은 윤재(4아웃), 말 공격은 영훈(2아웃)으로 집계했습니다. 영훈이 2회말 적시타로 선취점을 냈고 윤재가 3회초 적시타로 동점을 만들어 1–1 무승부로 마쳤습니다. 원문의 2회말 점수 1:0은 영훈의 선취점으로 해석했습니다. 영훈은 12아웃(4.0 IP), 7탈삼진이며 윤재는 6아웃(2.0 IP), 1탈삼진입니다. 실책 기록이 없어 두 선수 모두 1실점·1자책점입니다. 투구 손은 별도 전환 기록이 없어 기존 기본값인 우완으로 잠정 집계했습니다. 경기장은 확인 전까지 미등록이며, 이번 경기는 파크팩터 학습에서 제외하고 개인 지표에 중립 PF 100을 적용합니다.',
+    note: '3이닝 경기. 기존 공격 아웃 규칙에 따라 초 공격은 윤재(4아웃), 말 공격은 영훈(2아웃)으로 집계했습니다. 영훈이 2회말 적시타로 선취점을 냈고 윤재가 3회초 적시타로 동점을 만들어 1–1 무승부로 마쳤습니다. 원문의 2회말 점수 1:0은 영훈의 선취점으로 해석했습니다. 영훈은 12아웃(4.0 IP), 7탈삼진이며 윤재는 6아웃(2.0 IP), 1탈삼진입니다. 실책 기록이 없어 두 선수 모두 1실점·1자책점입니다. 투구 손은 별도 전환 기록이 없어 기존 기본값인 우완으로 잠정 집계했습니다. 경기장은 10월 9일에 208동 놀이터로 확인되어 반영했습니다.',
     plays: [
       ['1회','윤재','삼진 · 삼진 · 삼진 · 삼진'],['1회','영훈','땅볼 · 뜬공'],
       ['2회','윤재','삼진 · 땅볼 · 삼진 · 안타 · 땅볼'],['2회','영훈','뜬공 · 볼넷 · 2루타 · 안타(윤재 0–1 영훈) · 뜬공'],
       ['3회','윤재','내야안타 · 볼넷 · 땅볼 · 안타(1–1) · 땅볼 · 볼넷 · 삼진 · 땅볼'],['3회','영훈','뜬공 · 볼넷 · 안타 · 볼넷 · 삼진']
+    ]
+  },
+  {
+    id: '20261009-09', date: '2026-10-09', label: '10월 9일 금요일', no: 'GAME 09', innings: 6, venue: '서당골근린공원',
+    away: { player: 'younghun', runs: [0,0,0,0,1,3], R: 4, H: 9, E: 2, batting: { AB:20,R:4,H:9,'2B':5,'3B':1,HR:1,RBI:4,BB:1,HBP:0,SO:2,SF:1 }, pitching: { hand:'R',IP:'6.2',H:9,R:6,ER:5,BB:3,SO:7,HR:1 } },
+    home: { player: 'yunjae', runs: [0,0,2,2,2,'X'], R: 6, H: 9, E: 0, batting: { AB:30,R:6,H:9,'2B':3,HR:1,RBI:6,BB:3,HBP:1,SO:7 }, pitching: { hand:'R',IP:'4.0',H:9,R:4,ER:4,BB:1,SO:2,HR:1 } },
+    note: '6이닝 경기. 기존 공격 아웃 규칙에 따라 초 공격은 영훈(2아웃), 말 공격은 윤재(4아웃)로 집계했고, 원문 점수(1:0 등)는 윤재:영훈 순서로 해석했습니다. 윤재가 3회말 연속 적시타로 2점, 4회말 2타점 적시타, 5회말 투런 홈런으로 6–1까지 달아났습니다. 영훈이 5회초 적시타와 6회초 투런 홈런·희생플라이로 6–4까지 추격했지만 윤재가 승리했고, 윤재가 앞선 상태라 6회말은 진행하지 않았습니다. 영훈은 20아웃(6.2 IP), 7탈삼진, 6실점이며 윤재는 12아웃(4.0 IP), 2탈삼진, 4실점·4자책점입니다. 4회말 첫 타자의 실책 출루는 타수로 집계했고, 이어진 만루 땅볼에서 득점이 없었으므로 홈 포스아웃으로 해석했습니다. 두 번째 실책은 타자는 아웃되고 주자가 실책으로 진루한 것(2아웃 주자 2·3루)으로 해석했습니다. 자책점은 실책을 아웃으로 복원하고 통상적인 주자 진루를 적용해 4회말 2실점 중 1점만 자책으로 추정했습니다(영훈 6실점·5자책점). 6회초 희생플라이는 타수에서 제외했습니다. 투구 손은 별도 전환 기록이 없어 기존 기본값인 우완으로 잠정 집계했고, 경기 날짜는 기록을 받은 10월 9일로 등록했습니다.',
+    plays: [
+      ['1회','영훈','삼진 · 2루타 · 포수 파울플라이'],['1회','윤재','삼진 · 뜬공 · 뜬공 · 직선타'],
+      ['2회','영훈','뜬공 · 2루타 · 삼진'],['2회','윤재','땅볼 · 2루타 · 삼진 · 내야안타 · 땅볼(주자 1·3루) · 땅볼'],
+      ['3회','영훈','2루타 · 내야플라이 · 내야플라이'],['3회','윤재','2루타 · 땅볼 · 내야안타 · 안타(영훈 0–1 윤재) · 안타(0–2) · 삼진 · 사구 · 땅볼 · 땅볼'],
+      ['4회','영훈','2루타 · 뜬공 · 뜬공'],['4회','윤재','실책 출루 · 볼넷 · 볼넷 · 땅볼(홈 포스아웃) · 안타(0–4) · 실책(2아웃 주자 2·3루) · 볼넷 · 삼진 · 삼진'],
+      ['5회','영훈','내야플라이 · 2루타 · 안타(1–4) · 볼넷 · 뜬공'],['5회','윤재','땅볼 · 땅볼 · 2루타 · 삼진 · 홈런(1–6) · 삼진'],
+      ['6회','영훈','안타 · 홈런(3–6) · 3루타 · 희생플라이(4–6) · 뜬공']
     ]
   }
 ];
@@ -232,7 +246,7 @@ function resultClass(side, opponent) { return side.R>opponent.R?'win':side.R<opp
 function resultLabel(side, opponent) { return side.R>opponent.R?'승':side.R<opponent.R?'패':'무'; }
 function renderVenue(g) { return `<p class="game-venue"><span>경기장</span>${g.venue || '미등록'}</p>`; }
 function resultLinescore(g) {
-  return `<div class="result-line-scroll" tabindex="0" aria-label="${g.label} 이닝별 점수, 좌우 스크롤 가능"><table class="result-linescore"><caption class="sr-only">${g.label} 이닝별 점수</caption><thead><tr><th scope="col">선수</th>${Array.from({length:g.innings},(_,i)=>`<th scope="col">${i+1}</th>`).join('')}${['R','H','E'].map(c=>`<th scope="col" class="result-total">${c}</th>`).join('')}</tr></thead><tbody>${['away','home'].map(key=>`<tr><th scope="row">${player(g[key].player).name}</th>${g[key].runs.map(r=>`<td class="${r?'scoring-inning':''}">${r}</td>`).join('')}${['R','H','E'].map(c=>`<td class="result-total ${c==='R'?'run-total':''}">${g[key][c]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="result-line-scroll" tabindex="0" aria-label="${g.label} 이닝별 점수, 좌우 스크롤 가능"><table class="result-linescore"><caption class="sr-only">${g.label} 이닝별 점수</caption><thead><tr><th scope="col">선수</th>${Array.from({length:g.innings},(_,i)=>`<th scope="col">${i+1}</th>`).join('')}${['R','H','E'].map(c=>`<th scope="col" class="result-total">${c}</th>`).join('')}</tr></thead><tbody>${['away','home'].map(key=>`<tr><th scope="row">${player(g[key].player).name}</th>${g[key].runs.map(r=>`<td class="${typeof r==='number'&&r?'scoring-inning':''}">${r}</td>`).join('')}${['R','H','E'].map(c=>`<td class="result-total ${c==='R'?'run-total':''}">${g[key][c]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 function gameCard(g) {
   const rows=['away','home'].map(key=>{
