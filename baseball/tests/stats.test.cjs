@@ -31,7 +31,7 @@ const expectedVenues = {
   '20260823-01':'208동 놀이터', '20260830-02':'208동 놀이터', '20260906-03':'KIMM',
   '20260920-04':'서당골근린공원', '20260927-05':'서당골근린공원',
   '20261001-06':'어린이집 풋살장', '20261003-07':'208동 놀이터',
-  '20261004-08':'208동 놀이터', '20261009-09':'서당골근린공원'
+  '20261004-08':'208동 놀이터', '20261009-09':'서당골근린공원', '20261025-10':'208동 놀이터'
 };
 for (const [id, venue] of Object.entries(expectedVenues)) {
   assert.equal(allGames.find(g=>g.id===id).venue,venue);
@@ -77,6 +77,22 @@ for (const key of ['away','home']) assert.equal(october9[key].runs.filter(r=>typ
 assert.equal(october9.plays.length,11);
 run(`renderGame('20261009-09')`);
 assert(app.innerHTML.includes('<td class="">X</td>'));
+// 2026-10-25: Younghun bats top (2 outs), Yunjae bottom (4 outs); Younghun wins 4–3 on a bases-loaded walk in the 3rd.
+const october25=allGames.find(g=>g.id==='20261025-10');
+assert.equal(october25.innings,3);
+assert.equal(october25.away.player,'younghun');
+assert.equal(october25.home.player,'yunjae');
+assert.deepEqual(october25.away.runs,[3,0,1]);
+assert.deepEqual(october25.home.runs,[3,0,0]);
+assert.deepEqual(october25.away.batting,{AB:11,R:4,H:5,'2B':0,HR:0,RBI:4,BB:7,HBP:0,SO:0});
+assert.deepEqual(october25.home.batting,{AB:15,R:3,H:3,'2B':0,HR:1,RBI:3,BB:2,HBP:0,SO:8});
+for (const [key,outs,strikeouts,walks,hits,runs,earned] of [['away',12,8,2,3,3,3],['home',6,0,7,5,4,4]]) {
+  const p=october25[key].pitching;
+  assert.equal(run(`inningsToOuts('${p.IP}')`),outs);
+  assert.equal(p.SO,strikeouts); assert.equal(p.BB,walks); assert.equal(p.H,hits); assert.equal(p.R,runs); assert.equal(p.ER,earned);
+}
+for (const key of ['away','home']) assert.equal(october25[key].runs.reduce((a,b)=>a+b,0),october25[key].R);
+assert.equal(october25.plays.length,6);
 let checks = 0;
 
 for (const id of ids) {
