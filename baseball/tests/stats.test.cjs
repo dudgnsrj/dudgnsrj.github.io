@@ -215,6 +215,45 @@ for (const game of allGames) {
 context.location.hash=`#game/${allGames.at(-1).id}?view=plays`;
 run('navigate()');
 assert.equal(scrolledElement,'game-plays');
+
+// 도전과제: facts hand-checked against the recorded games.
+const badgesOf = id => Object.fromEntries(data(`computeAchievements('${id}',games)`).map(b=>[b.id,b]));
+const yunjaeBadges = badgesOf('yunjae'), younghunBadges = badgesOf('younghun');
+for (const list of [yunjaeBadges, younghunBadges]) assert(Object.keys(list).length >= 20 && Object.keys(list).length <= 28);
+assert.equal(yunjaeBadges['first-hr'].game.no, 'GAME 01'); // 윤재 1회 선두 홈런.
+assert.equal(younghunBadges['first-hr'].game.no, 'GAME 02'); // 영훈 5회 홈런(2–5).
+assert.equal(younghunBadges['first-triple'].game.no, 'GAME 09'); // 유일한 3루타.
+assert.equal(yunjaeBadges['first-triple'].unlocked, false);
+assert.equal(yunjaeBadges['no-strikeout'].unlocked, false); // 윤재는 모든 경기에서 삼진이 있었다.
+assert.equal(yunjaeBadges['k-10'].unlocked, false);
+assert.equal(yunjaeBadges.comeback.game.no, 'GAME 04'); // 4회말 2–3으로 뒤진 뒤 5회초 4–3.
+assert.equal(younghunBadges.comeback.unlocked, false);
+assert.equal(yunjaeBadges['walk-off'].game.no, 'GAME 03');
+assert.equal(yunjaeBadges['hit-chain'].game.no, 'GAME 01'); // 2회 안타 · 안타.
+assert.equal(yunjaeBadges['hits-100'].progress.value, 89);
+for (const [id, list] of [['yunjae', yunjaeBadges], ['younghun', younghunBadges]]) {
+  const sides = allGames.map(g => g.away.player === id ? [g.away, g.home] : [g.home, g.away]);
+  assert.equal(list['hits-100'].progress.value, Math.min(100, sides.reduce((t, [s]) => t + s.batting.H, 0)));
+  assert.equal(list['hr-10'].progress.value, Math.min(10, sides.reduce((t, [s]) => t + s.batting.HR, 0)));
+  assert.equal(list['first-win'].count, sides.filter(([s, o]) => s.R > o.R).length);
+  assert.equal(list['games-10'].game.no, 'GAME 10');
+  assert.equal(list['games-20'].unlocked, false);
+  const sorted = data(`sortAchievements(computeAchievements('${id}',games))`);
+  const firstLocked = sorted.findIndex(b => !b.unlocked);
+  assert(sorted.slice(firstLocked).every(b => !b.unlocked));
+  for (let i = 1; i < firstLocked; i++) assert(sorted[i - 1].game.date >= sorted[i].game.date);
+  run(`renderBadges('player=${id}')`);
+  assert(!/undefined|NaN|null/.test(app.innerHTML));
+  assert.deepEqual([...app.innerHTML.matchAll(/data-badge="([^"]+)"/g)].map(m => m[1]), sorted.map(b => b.id));
+  assert(app.innerHTML.includes(`달성 ${firstLocked}/${sorted.length} (${Math.round(firstLocked / sorted.length * 100)}%)`));
+  assert(app.innerHTML.includes(`href="#badges?player=${id}" class="active"`));
+}
+run(`renderBadges('player=yunjae')`);
+assert(app.innerHTML.includes('GAME 04 · 9월 20일 달성'));
+assert(app.innerHTML.includes('89/100'));
+context.location.hash = '#badges';
+run('navigate()');
+assert(app.innerHTML.includes('href="#badges?player=yunjae" class="active"'));
 assert.equal(JSON.stringify(data('games')), originalData);
 
 // Phone layout (max-width 600px): the same records rendered as cards, without wide tables.
@@ -251,5 +290,6 @@ for (const mode of modes) for (const basis of ['gamelog', 'cumulative', 'game'])
   assert.deepEqual([...html.matchAll(/data-log-game="([^"]+)"/g)].map(m=>m[1]), (player === 'all' ? ids : [player]).flatMap(() => expected));
 }
 assert.equal((phoneHtml('renderParks()').match(/<li class="m-card">/g)||[]).length, phoneRun('estimateParks(games).length'));
+for (const id of ids) assert.equal((phoneHtml(`renderBadges('player=${id}')`).match(/data-badge="/g)||[]).length, phoneRun(`computeAchievements('${id}',games).length`));
 assert.equal(JSON.stringify(JSON.parse(JSON.stringify(phoneRun('games')))), originalData);
 console.log(`PASS: ${checks} leaderboard/log combinations plus ${allGames.length} scorecards; totals, chronological records, line scores, links, routes, and original data.`);

@@ -695,12 +695,136 @@ function renderTrends(query = '') {
   setActive('trends');
 }
 
+// 도전과제는 games에 기록된 타격·투구·이닝별 점수·플레이 기록만으로 계산한다. 수비 기록은 없으므로 수비 배지는 없다.
+const badgeCategories = { batting:'타격', pitching:'투구', game:'경기', career:'누적' };
+const isHitToken = token => /^(끝내기 )?(내야|번트)?안타$|^[23]루타$|^홈런$/.test(token);
+function longestHitChain(c) {
+  let best=0;
+  for(const tokens of c.plays) {
+    let run=0;
+    for(const token of tokens) {
+      if(/폭투|전환/.test(token)) continue; // 타석이 아닌 진루·투구 손 전환은 연속 기록을 끊지 않는다.
+      run=isHitToken(token)?run+1:0;
+      best=Math.max(best,run);
+    }
+  }
+  return best;
+}
+function longestScorelessRun(c) {
+  let best=0, run=0;
+  for(const r of c.opponent.runs) { run=r===0?run+1:0; best=Math.max(best,run); }
+  return best;
+}
+function trailedDuringGame(c) {
+  const g=c.game, mineAway=c.side===g.away;
+  let away=0, home=0;
+  const behind=()=>mineAway?away<home:home<away;
+  for(let i=0;i<g.innings;i++) {
+    away+=Number(g.away.runs[i])||0; if(behind()) return true;
+    home+=Number(g.home.runs[i])||0; if(behind()) return true;
+  }
+  return false;
+}
+const badgeDefs = [
+  { id:'first-hit', cat:'batting', mark:'H', title:'첫 안타', desc:'경기에서 처음으로 안타를 쳤어요.', stat:c=>c.bat.H, target:1 },
+  { id:'first-double', cat:'batting', mark:'2B', title:'첫 2루타', desc:'멀리 쳐서 2루까지 달렸어요.', stat:c=>c.bat['2B']||0, target:1 },
+  { id:'first-triple', cat:'batting', mark:'3B', title:'첫 3루타', desc:'한 번에 3루까지 달리는 큰 타구.', stat:c=>c.bat['3B']||0, target:1 },
+  { id:'first-hr', cat:'batting', mark:'HR', title:'첫 홈런', desc:'담장을 넘긴 첫 홈런!', stat:c=>c.bat.HR, target:1 },
+  { id:'multi-hit', cat:'batting', mark:'2H', title:'멀티히트', desc:'한 경기에서 안타 2개 이상.', stat:c=>c.bat.H, target:2, repeat:true },
+  { id:'three-hit', cat:'batting', mark:'3H', title:'3안타 경기', desc:'한 경기에서 안타 3개 이상.', stat:c=>c.bat.H, target:3, repeat:true },
+  { id:'rbi-3', cat:'batting', mark:'RBI', title:'3타점 경기', desc:'한 경기에서 타점 3개 이상.', stat:c=>c.bat.RBI, target:3, repeat:true },
+  { id:'hit-chain', cat:'batting', mark:'연타', title:'연속 안타', desc:'같은 이닝에서 안타를 연달아 2개.', stat:longestHitChain, target:2, repeat:true },
+  { id:'walk-off', cat:'batting', mark:'끝', title:'끝내기 안타', desc:'내 안타로 경기를 끝냈어요.', game:c=>c.plays.flat().some(t=>t.startsWith('끝내기')&&isHitToken(t)), repeat:true },
+  { id:'no-strikeout', cat:'batting', mark:'0K', title:'삼진 없는 경기', desc:'4타석 이상 나와서 삼진 0개.', game:c=>c.PA>=4&&c.bat.SO===0, repeat:true },
+  { id:'first-k', cat:'pitching', mark:'K', title:'첫 탈삼진', desc:'타자를 삼진으로 잡았어요.', stat:c=>c.pit.SO, target:1 },
+  { id:'k-5', cat:'pitching', mark:'5K', title:'5탈삼진 경기', desc:'한 경기에서 삼진 5개 잡기.', stat:c=>c.pit.SO, target:5, repeat:true },
+  { id:'k-10', cat:'pitching', mark:'10K', title:'10탈삼진 경기', desc:'한 경기에서 삼진 10개 잡기.', stat:c=>c.pit.SO, target:10, repeat:true },
+  { id:'no-walk', cat:'pitching', mark:'0BB', title:'볼넷 없는 투구', desc:'1이닝 이상 던지며 볼넷 0개.', game:c=>c.outs>=3&&c.pit.BB===0, repeat:true },
+  { id:'shutout', cat:'pitching', mark:'0R', title:'무실점 투구', desc:'1이닝 이상 던지며 실점 0.', game:c=>c.outs>=3&&c.pit.R===0, repeat:true },
+  { id:'zero-3', cat:'pitching', mark:'3×0', title:'3이닝 연속 무실점', desc:'상대 공격 3이닝을 연달아 0점으로.', stat:longestScorelessRun, target:3, repeat:true },
+  { id:'first-win', cat:'game', mark:'W', title:'첫 승리', desc:'경기에서 이겼어요.', game:c=>c.result==='W', repeat:true },
+  { id:'unbeaten-3', cat:'game', mark:'3G', title:'3경기 연속 무패', desc:'세 경기 연달아 지지 않기(승·무).', streak:c=>c.result!=='L', target:3 },
+  { id:'comeback', cat:'game', mark:'역전', title:'역전승', desc:'지고 있다가 뒤집어서 이겼어요.', game:c=>c.result==='W'&&trailedDuringGame(c), repeat:true },
+  { id:'nine-innings', cat:'game', mark:'9', title:'9이닝 완주', desc:'9이닝 경기를 끝까지 뛰었어요.', game:c=>c.game.innings>=9, repeat:true },
+  { id:'venues-4', cat:'game', mark:'4곳', title:'경기장 4곳 경험', desc:'서로 다른 경기장 4곳에서 경기하기.', distinct:c=>c.game.venue, target:4 },
+  { id:'hits-50', cat:'career', mark:'50H', title:'누적 안타 50', desc:'시즌 안타 50개 모으기.', total:c=>c.bat.H, target:50 },
+  { id:'hits-100', cat:'career', mark:'100H', title:'누적 안타 100', desc:'시즌 안타 100개 모으기.', total:c=>c.bat.H, target:100 },
+  { id:'hr-3', cat:'career', mark:'3HR', title:'누적 홈런 3', desc:'홈런 3개 모으기.', total:c=>c.bat.HR, target:3 },
+  { id:'hr-5', cat:'career', mark:'5HR', title:'누적 홈런 5', desc:'홈런 5개 모으기.', total:c=>c.bat.HR, target:5 },
+  { id:'hr-10', cat:'career', mark:'10HR', title:'누적 홈런 10', desc:'홈런 10개 모으기.', total:c=>c.bat.HR, target:10 },
+  { id:'games-10', cat:'career', mark:'10G', title:'10경기 출전', desc:'경기 10번 하기.', total:()=>1, target:10 },
+  { id:'games-20', cat:'career', mark:'20G', title:'20경기 출전', desc:'경기 20번 하기.', total:()=>1, target:20 }
+];
+function playerGameContext(playerId, game) {
+  const side=game.away.player===playerId?game.away:game.home, opponent=side===game.away?game.home:game.away;
+  const bat=side.batting, pit=side.pitching;
+  return {
+    game, side, opponent, bat, pit, outs:inningsToOuts(pit.IP),
+    PA:(bat.AB||0)+(bat.BB||0)+(bat.HBP||0)+(bat.SF||0)+(bat.SH||0),
+    plays:game.plays.filter(p=>p[1]===players[playerId].name).map(p=>p[2].split(' · ').map(t=>t.replace(/\(.*?\)/g,'').trim())),
+    result:side.R>opponent.R?'W':side.R<opponent.R?'L':'T'
+  };
+}
+function computeAchievements(playerId, gameList) {
+  const contexts=gameList.filter(g=>g.away.player===playerId||g.home.player===playerId)
+    .sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id)).map(g=>playerGameContext(playerId,g));
+  return badgeDefs.map((def,order)=>{
+    let best=0, streak=0, count=0, first=null, total=0;
+    const seen=new Set();
+    for(const c of contexts) {
+      let earned;
+      if(def.total) { total+=def.total(c); best=total; earned=total>=def.target; }
+      else if(def.distinct) { seen.add(def.distinct(c)); best=seen.size; earned=best>=def.target; }
+      else if(def.streak) { streak=def.streak(c)?streak+1:0; best=Math.max(best,streak); earned=streak>=def.target; }
+      else if(def.stat) { const value=def.stat(c); best=Math.max(best,value); earned=value>=def.target; }
+      else earned=def.game(c);
+      if(earned&&!first) first=c.game;
+      if(earned&&def.repeat) count++;
+    }
+    return {
+      id:def.id, order, category:def.cat, categoryLabel:badgeCategories[def.cat], mark:def.mark, title:def.title, desc:def.desc,
+      unlocked:Boolean(first), game:first&&{ id:first.id, no:first.no, date:first.date }, count:def.repeat?count:null,
+      progress:def.target>1?{ value:Math.min(best,def.target), target:def.target }:null
+    };
+  });
+}
+function sortAchievements(list) {
+  const ratio=b=>b.progress?b.progress.value/b.progress.target:0;
+  return list.slice().sort((a,b)=>a.unlocked!==b.unlocked?(a.unlocked?-1:1)
+    : a.unlocked?(b.game.date.localeCompare(a.game.date)||b.game.id.localeCompare(a.game.id)||a.order-b.order)
+    : (ratio(b)-ratio(a)||a.order-b.order));
+}
+function badgeIcon(b) {
+  const long=b.mark.length>2;
+  return `<svg class="badge-icon" viewBox="0 0 64 64" aria-hidden="true"><path class="badge-shape" d="M32 3l25 14.5v29L32 61 7 46.5v-29z"/><path class="badge-inner" d="M32 9.5l19.5 11.25v22.5L32 54.5 12.5 43.25v-22.5z"/><text class="badge-mark${long?' is-long':''}" x="32" y="${long?37:38.5}" text-anchor="middle">${b.mark}</text></svg>`;
+}
+function badgeItem(b) {
+  const [, month, day]=b.game?b.game.date.split('-').map(Number):[];
+  const progress=b.progress&&!b.unlocked?`<div class="badge-progress"><div class="badge-bar" role="progressbar" aria-label="${b.title} 진행도" aria-valuemin="0" aria-valuemax="${b.progress.target}" aria-valuenow="${b.progress.value}"><span style="width:${Math.round(b.progress.value/b.progress.target*100)}%"></span></div><span>${b.progress.value}/${b.progress.target}</span></div>`:'';
+  const state=b.unlocked?`<p class="badge-when">${b.game.no} · ${month}월 ${day}일 달성${b.count>1?` · <strong>${b.count}번 달성</strong>`:''}</p>`:progress||'<p class="badge-when is-waiting">아직 잠겨 있어요</p>';
+  return `<li class="badge cat-${b.category} ${b.unlocked?'is-unlocked':'is-locked'}" data-badge="${b.id}">${badgeIcon(b)}<div class="badge-body"><p class="badge-cat">${b.categoryLabel}${b.unlocked?'':' · 잠김'}</p><h3>${b.title}</h3><p class="badge-desc">${b.desc}</p>${state}</div></li>`;
+}
+function renderBadges(query = '') {
+  const requested=new URLSearchParams(query).get('player');
+  const state={ player:['yunjae','younghun'].includes(requested)?requested:'yunjae' };
+  const p=players[state.player], list=sortAchievements(computeAchievements(p.id,games));
+  const done=list.filter(b=>b.unlocked).length, pct=Math.round(done/list.length*100), next=list.find(b=>!b.unlocked);
+  const summary=`<section class="badge-summary ${p.color}" aria-label="${p.name} 도전과제 달성 현황"><div class="badge-summary-top"><span class="team-dot ${p.color}" aria-hidden="true">${p.initial}</span><strong>달성 ${done}/${list.length} (${pct}%)</strong><span>${p.name} · ${games.length}경기 기록 기준</span></div><div class="badge-bar" role="progressbar" aria-label="전체 달성률" aria-valuemin="0" aria-valuemax="${list.length}" aria-valuenow="${done}"><span style="width:${pct}%"></span></div>${next?`<p class="badge-next">다음 목표 · <strong>${next.title}</strong>${next.progress?` ${next.progress.value}/${next.progress.target}`:''}</p>`:''}</section>`;
+  const segments=segmentedLinks('badges',state,'player',[['yunjae','윤재'],['younghun','영훈']],'선수 선택');
+  const items=`<ol class="badge-list">${list.map(badgeItem).join('')}</ol>`;
+  const note='배지는 기록된 경기 결과(타격·투구·이닝별 점수·플레이 기록)로만 계산합니다. 수비는 기록하지 않아 수비 배지는 없습니다. 달성 경기는 처음 조건을 채운 경기이고, 반복 배지는 조건을 채운 경기 수를 셉니다.';
+  app.innerHTML=isPhone()
+    ? `<section class="m-page badges-page"><header class="m-heading"><p class="eyebrow">FAMILY LEAGUE / ACHIEVEMENTS</p><h1>도전과제</h1><p class="m-sub">경기를 할 때마다 배지가 열려요.</p></header>${segments}${summary}${items}<p class="m-note">${note}</p></section>`
+    : `<section class="container stats-page badges-page"><header class="stats-page-heading"><div><p class="eyebrow">FAMILY LEAGUE / ACHIEVEMENTS</p><h1>도전과제</h1><p class="subhead">경기를 할 때마다 배지가 열려요. 하나씩 모아 보세요.</p></div><span class="season-stamp">2026<span>SEASON</span></span></header>${segments}${summary}${items}<p class="stats-footnote">${note}</p></section>`;
+  setActive('badges');
+}
+
 function formatDate(date) { const d = new Date(`${date}T00:00:00`); return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][d.getDay()]}`; }
 function setActive(name) { document.querySelectorAll('.nav-link').forEach(x=>x.classList.toggle('active',x.dataset.route===name)); }
 function navigate() {
   const [path,query='']=location.hash.slice(1).split('?');
   const [name='schedule',id]=path.split('/');
-  if(name==='game') renderGame(id); else if(name==='players') renderPlayers(query); else if(name==='player') renderPlayer(id); else if(name==='trends') renderTrends(query); else if(name==='parks') renderParks(); else renderSchedule();
+  if(name==='game') renderGame(id); else if(name==='players') renderPlayers(query); else if(name==='player') renderPlayer(id); else if(name==='trends') renderTrends(query); else if(name==='parks') renderParks(); else if(name==='badges') renderBadges(query); else renderSchedule();
   if(name==='game' && new URLSearchParams(query).get('view')==='plays') { restoreTrendFocus=''; const plays=document.getElementById('game-plays'); plays?.querySelector?.('details')?.setAttribute('open',''); plays?.scrollIntoView({block:'start'}); }
   else if(restoreTrendFocus) { document.getElementById(restoreTrendFocus)?.focus({preventScroll:true}); restoreTrendFocus=''; }
   else window.scrollTo(0,0);

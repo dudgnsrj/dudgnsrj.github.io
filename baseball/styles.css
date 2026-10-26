@@ -421,7 +421,7 @@ footer span:first-child { color: #fff; font-weight: 800; }
   .site-header .brand { height: 52px; }
   .brand-mark { display: grid; width: 32px; height: 32px; font-size: 18px; }
   .brand strong { font-size: 17px; }
-  .site-header nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; height: auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: rgba(7,26,47,.96); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: 1px solid rgba(255,255,255,.14); }
+  .site-header nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; height: auto; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: rgba(7,26,47,.96); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: 1px solid rgba(255,255,255,.14); }
   .nav-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: var(--tabbar); padding: 6px 2px 4px; border: 0; color: #8fa2b8; font-size: 11px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
   .nav-link:hover { color: #8fa2b8; }
   .nav-link.active, .nav-link.active:hover { color: #fff; }
@@ -587,4 +587,54 @@ footer span:first-child { color: #fff; font-weight: 800; }
   .saber-method { padding: 16px 14px; }
   .saber-method p { font-size: 14px; }
   .stats-page > p .text-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; }
+}
+
+/* 도전과제 (#badges): Steam-style achievement list. */
+.cat-batting { --badge-color: #f36f21; }
+.cat-pitching { --badge-color: #1f5f96; }
+.cat-game { --badge-color: #18a36b; }
+.cat-career { --badge-color: #c8901a; }
+.badges-page .stats-segments { margin-top: 8px; }
+.badge-summary { margin: 22px 0 18px; padding: 20px 22px; display: grid; gap: 12px; color: #fff; background: var(--navy); border-radius: 12px; box-shadow: var(--shadow); }
+.badge-summary-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.badge-summary-top strong { font: 800 24px Archivo, "Noto Sans KR", sans-serif; font-variant-numeric: tabular-nums; }
+.badge-summary-top > span:last-child { margin-left: auto; color: #c1ccda; font-size: 13px; }
+.badge-summary .team-dot { width: 34px; height: 34px; font-size: 13px; }
+.badge-bar { height: 8px; overflow: hidden; border-radius: 99px; background: #e3e8ee; }
+.badge-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--badge-color, var(--orange)); }
+.badge-summary .badge-bar { height: 10px; background: rgba(255,255,255,.18); }
+.badge-summary .badge-bar > span { background: linear-gradient(90deg, var(--orange), #ffc04d); }
+.badge-next { margin: 0; color: #c1ccda; font-size: 13px; }
+.badge-next strong { color: #fff; }
+.badge-list { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.badge { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 16px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.badge.is-locked { background: #f6f7f8; }
+.badge-icon { display: block; width: 64px; height: 64px; }
+.badge-shape { fill: var(--badge-color); }
+.badge-inner { fill: none; stroke: rgba(255,255,255,.6); stroke-width: 2; }
+.badge-mark { fill: #fff; font: 800 18px Archivo, "Noto Sans KR", sans-serif; }
+.badge-mark.is-long { font-size: 13px; }
+.badge.is-locked .badge-shape { fill: #c4cbd3; }
+.badge.is-locked .badge-icon { opacity: .8; }
+.badge-body { min-width: 0; }
+.badge-cat { margin: 0; color: var(--badge-color); font-size: 11px; font-weight: 800; letter-spacing: .06em; }
+.badge.is-locked .badge-cat { color: var(--muted); }
+.badge h3 { margin: 2px 0 2px; font-size: 16px; line-height: 1.35; }
+.badge.is-locked h3 { color: #4b5866; }
+.badge-desc { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.badge-when { margin: 6px 0 0; color: var(--navy); font-size: 12px; font-weight: 700; }
+.badge-when strong { color: var(--red); }
+.badge-when.is-waiting { color: var(--muted); font-weight: 600; }
+.badge-progress { margin-top: 8px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; color: var(--muted); font: 700 12px Archivo, sans-serif; font-variant-numeric: tabular-nums; }
+.badges-page .stats-footnote { margin-top: 18px; }
+@media (max-width: 600px) {
+  .badge-summary { margin: 16px 0 14px; padding: 16px; border-radius: 14px; }
+  .badge-summary-top strong { font-size: 22px; }
+  .badge-summary-top > span:last-child { margin-left: 0; flex-basis: 100%; }
+  .badge-list { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .badge { grid-template-columns: 56px minmax(0, 1fr); gap: 14px; padding: 14px; border-radius: 14px; }
+  .badge-icon { width: 56px; height: 56px; }
+  .badge h3 { font-size: 17px; }
+  .badge-desc { font-size: 14px; }
+  .badge-when, .badge-progress { font-size: 13px; }
 }
