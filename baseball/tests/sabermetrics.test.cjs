@@ -6,7 +6,7 @@ const path=require('node:path');
 const app={innerHTML:''};
 const ctx={URLSearchParams,location:{hash:'#parks'},window:{addEventListener(){},scrollTo(){}},document:{querySelector:()=>app,querySelectorAll:()=>[],addEventListener(){}}};
 vm.createContext(ctx);
-for(const name of ['sabermetrics.js','app.js']) vm.runInContext(fs.readFileSync(path.join(__dirname,'..',name),'utf8'),ctx);
+for(const name of ['data.js','sabermetrics.js','app.js']) vm.runInContext(fs.readFileSync(path.join(__dirname,'..',name),'utf8'),ctx);
 const run=s=>vm.runInContext(s,ctx);
 const data=s=>JSON.parse(JSON.stringify(run(s)));
 const close=(a,b)=>assert(Math.abs(a-b)<1e-10,`${a} != ${b}`);

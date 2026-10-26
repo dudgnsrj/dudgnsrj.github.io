@@ -19,6 +19,7 @@ const context = {
   URLSearchParams
 };
 vm.createContext(context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../data.js'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../sabermetrics.js'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8'), context);
 const run = expression => vm.runInContext(expression, context);
@@ -266,7 +267,7 @@ const phoneContext = {
   URLSearchParams
 };
 vm.createContext(phoneContext);
-for (const name of ['sabermetrics.js', 'app.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', name), 'utf8'), phoneContext);
+for (const name of ['data.js', 'sabermetrics.js', 'app.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', name), 'utf8'), phoneContext);
 const phoneRun = expression => vm.runInContext(expression, phoneContext);
 const phoneHtml = expression => { phoneRun(expression); const html = phoneApp.innerHTML; assert(!/undefined|NaN|Infinity/.test(html), expression); assert(!html.includes('<table class="record-table') && !html.includes('box-table'), expression); return html; };
 const phoneSchedule = phoneHtml('renderSchedule()');
