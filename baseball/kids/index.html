@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff4dc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="description" content="윤재가 직접 만져 보는 우리집 야구 기록">
+  <title>윤재의 야구장</title>
+  <link rel="preload" href="fonts/jua-subset.woff2?v=20261026-kids" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="kids.css?v=20261026-kids">
+</head>
+<body data-screen="home">
+  <header class="kid-top">
+    <button class="kid-btn home-btn" id="homeBtn" type="button" aria-label="처음 화면으로 가기. 어른은 2초 동안 누르세요.">
+      <svg class="hold-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="45"/></svg>
+      <svg class="home-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 23 24 8l18 15"/><path d="M11 20v19h26V20"/><path d="M20 39V28h8v11"/></svg>
+    </button>
+    <h1 id="screenTitle">윤재의 야구장</h1>
+    <button class="kid-btn sound-btn" id="soundBtn" type="button" aria-pressed="false">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path class="spk" d="M8 19h8l10-8v26l-10-8H8z"/><path class="wave" d="M32 17c3 4 3 10 0 14M37 12c6 7 6 17 0 24"/><path class="mute" d="M32 18l10 12M42 18 32 30"/></svg>
+      <span id="soundLabel">소리 끔</span>
+    </button>
+  </header>
+  <main id="kid" tabindex="-1"></main>
+  <div id="overlay" class="overlay" hidden></div>
+  <script src="../data.js?v=20261026-kids"></script>
+  <script src="kids.js?v=20261026-kids"></script>
+</body>
+</html>
